@@ -1,0 +1,8 @@
+[package]
+name = "rasterizer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.9.1"
+vector_2d_3d = "0.1.0"
