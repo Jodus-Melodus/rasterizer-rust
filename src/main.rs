@@ -11,14 +11,13 @@ fn rasterize() -> Result<()> {
 
     img.draw_triangle2((100, 100), (100, 300), (300, 100), Image::BLUE);
 
-    window
-        .update_with_buffer(&img.to_u32_buffer(), width, height)
-        .unwrap();
-
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        window.update();
+        window
+            .update_with_buffer(&img.to_u32_buffer(), width, height)
+            .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(30));
     }
+
     Ok(())
 }
 
