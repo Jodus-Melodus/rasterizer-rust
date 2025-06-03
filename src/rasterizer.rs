@@ -1,3 +1,4 @@
+use std::f32::INFINITY;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Result;
@@ -7,7 +8,7 @@ use vector_2d_3d::Vector2D;
 
 #[derive(PartialEq)]
 pub struct Image {
-    pub pixels: Vec<Vec<(u8, u8, u8)>>,
+    pixels: Vec<Vec<(u8, u8, u8)>>,
 }
 
 impl Image {
@@ -105,13 +106,13 @@ impl Image {
         c: (u32, u32),
         color: (u8, u8, u8),
     ) {
-        self.pixels[a.0 as usize][a.1 as usize] = color;
-        self.pixels[b.0 as usize][b.1 as usize] = color;
-        self.pixels[c.0 as usize][c.1 as usize] = color;
+        self.pixels[a.1 as usize][a.0 as usize] = color;
+        self.pixels[b.1 as usize][b.0 as usize] = color;
+        self.pixels[c.1 as usize][c.0 as usize] = color;
 
-        let a = Vector2D::from_coord(a.0 as f32, a.1 as f32);
-        let b = Vector2D::from_coord(b.0 as f32, b.1 as f32);
-        let c = Vector2D::from_coord(c.0 as f32, c.1 as f32);
+        let a = Vector2D::from_coord(a.1 as f32, a.0 as f32);
+        let b = Vector2D::from_coord(b.1 as f32, b.0 as f32);
+        let c = Vector2D::from_coord(c.1 as f32, c.0 as f32);
         let ab = b - a;
         let bc = c - b;
         let ca = a - c;
@@ -183,9 +184,19 @@ impl Image {
         Box<dyn Fn(f32, f32) -> bool>,
         Box<dyn Fn(f32, f32) -> bool>,
     ) {
-        let mab = (a.y - b.y) / (a.x - b.x); // prevent division by 0
-        let mbc = (b.y - c.y) / (b.x - c.x); // prevent division by 0
-        let mac = (a.y - c.y) / (a.x - c.x); // prevent division by 0
+        let mut mab = (a.y - b.y) / (a.x - b.x);
+        let mut mbc = (b.y - c.y) / (b.x - c.x);
+        let mut mac = (a.y - c.y) / (a.x - c.x);
+
+        if mab == f32::NEG_INFINITY {
+            mab = f32::MAX;
+        }
+        if mbc == f32::NEG_INFINITY {
+            mbc = f32::MAX;
+        }
+        if mac == f32::NEG_INFINITY {
+            mac = f32::MAX;
+        }
 
         let ab = move |x: f32| mab * (x - a.x) + a.y;
         let bc = move |x: f32| mbc * (x - b.x) + b.y;
