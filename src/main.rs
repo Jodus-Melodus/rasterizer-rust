@@ -1,8 +1,8 @@
 mod rasterizer;
 use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
-use std::{f32::MIN_POSITIVE, io::Result};
-use vector_2d_3d::{Vector2D, Vector3D};
+use std::io::Result;
+use vector_2d_3d::Vector2D;
 
 fn main() -> Result<()> {
     let width = 512;

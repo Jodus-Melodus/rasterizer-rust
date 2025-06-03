@@ -5,7 +5,6 @@ use std::io::Write;
 use std::vec;
 
 use vector_2d_3d::Vector2D;
-use vector_2d_3d::Vector3D;
 
 #[derive(PartialEq)]
 pub struct Image {
@@ -39,21 +38,6 @@ impl Image {
     pub fn from_array(pixels: Vec<Vec<(u8, u8, u8)>>) -> Self {
         let offset = pixels.len() / 2;
         Image { pixels, offset }
-    }
-
-    pub fn create_gradient(width: usize, height: usize) -> Self {
-        let mut pixels = vec![vec![(0, 0, 0); width]; height];
-
-        for x in 0..height {
-            for y in 0..width {
-                pixels[y][x] = (0, x as u8, y as u8);
-            }
-        }
-
-        Image {
-            pixels,
-            offset: width / 2,
-        }
     }
 
     pub fn save_bmp(&self, path: &str) -> Result<()> {
