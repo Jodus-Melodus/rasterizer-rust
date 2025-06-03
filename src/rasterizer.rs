@@ -7,7 +7,7 @@ use vector_2d_3d::Vector2D;
 
 #[derive(PartialEq)]
 pub struct Image {
-    pixels: Vec<Vec<(u8, u8, u8)>>,
+    pub pixels: Vec<Vec<(u8, u8, u8)>>,
 }
 
 impl Image {
@@ -16,6 +16,15 @@ impl Image {
     pub const BLUE: (u8, u8, u8) = (0x00, 0x00, 0xFF);
     pub const WHITE: (u8, u8, u8) = (0xFF, 0xFF, 0xFF);
     pub const BLACK: (u8, u8, u8) = (0x00, 0x00, 0x00);
+
+    pub fn to_u32_buffer(&self) -> Vec<u32> {
+        self.pixels
+            .iter()
+            .rev()
+            .flat_map(|row| row.iter())
+            .map(|&(r, g, b)| ((r as u32) << 16) | ((g as u32) << 8) | (b as u32))
+            .collect()
+    }
 
     pub fn new(width: usize, height: usize) -> Self {
         Image {
@@ -100,9 +109,9 @@ impl Image {
         self.pixels[b.0 as usize][b.1 as usize] = color;
         self.pixels[c.0 as usize][c.1 as usize] = color;
 
-        let a = Vector2D::new(a.0 as f32, a.1 as f32);
-        let b = Vector2D::new(b.0 as f32, b.1 as f32);
-        let c = Vector2D::new(c.0 as f32, c.1 as f32);
+        let a = Vector2D::from_coord(a.0 as f32, a.1 as f32);
+        let b = Vector2D::from_coord(b.0 as f32, b.1 as f32);
+        let c = Vector2D::from_coord(c.0 as f32, c.1 as f32);
         let ab = b - a;
         let bc = c - b;
         let ca = a - c;
@@ -114,7 +123,7 @@ impl Image {
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
-                let p = Vector2D::new(x as f32, y as f32);
+                let p = Vector2D::from_coord(x as f32, y as f32);
 
                 let ap = p - a;
                 let bp = p - b;
@@ -142,9 +151,9 @@ impl Image {
         self.pixels[b.1 as usize][b.0 as usize] = color;
         self.pixels[c.1 as usize][c.0 as usize] = color;
 
-        let a = Vector2D::new(a.0 as f32, a.1 as f32);
-        let b = Vector2D::new(b.0 as f32, b.1 as f32);
-        let c = Vector2D::new(c.0 as f32, c.1 as f32);
+        let a = Vector2D::from_coord(a.0 as f32, a.1 as f32);
+        let b = Vector2D::from_coord(b.0 as f32, b.1 as f32);
+        let c = Vector2D::from_coord(c.0 as f32, c.1 as f32);
 
         let min_x = a.x.min(b.x).min(c.x) as usize;
         let max_x = a.x.max(b.x).max(c.x) as usize;
