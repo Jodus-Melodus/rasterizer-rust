@@ -1,14 +1,16 @@
-use std::f32::INFINITY;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Result;
 use std::io::Write;
+use std::vec;
 
 use vector_2d_3d::Vector2D;
+use vector_2d_3d::Vector3D;
 
 #[derive(PartialEq)]
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
+    offset: usize,
 }
 
 impl Image {
@@ -30,11 +32,13 @@ impl Image {
     pub fn new(width: usize, height: usize) -> Self {
         Image {
             pixels: vec![vec![(0, 0, 0); width]; height],
+            offset: width / 2,
         }
     }
 
     pub fn from_array(pixels: Vec<Vec<(u8, u8, u8)>>) -> Self {
-        Image { pixels }
+        let offset = pixels.len() / 2;
+        Image { pixels, offset }
     }
 
     pub fn create_gradient(width: usize, height: usize) -> Self {
@@ -46,7 +50,10 @@ impl Image {
             }
         }
 
-        Image { pixels }
+        Image {
+            pixels,
+            offset: width / 2,
+        }
     }
 
     pub fn save_bmp(&self, path: &str) -> Result<()> {
@@ -99,28 +106,22 @@ impl Image {
         Ok(())
     }
 
-    pub fn draw_triangle1(
-        &mut self,
-        a: (u32, u32),
-        b: (u32, u32),
-        c: (u32, u32),
-        color: (u8, u8, u8),
-    ) {
-        self.pixels[a.1 as usize][a.0 as usize] = color;
-        self.pixels[b.1 as usize][b.0 as usize] = color;
-        self.pixels[c.1 as usize][c.0 as usize] = color;
+    pub fn draw_triangle1(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+        self.pixels[((a.y as isize) + self.offset as isize) as usize]
+            [(a.x as isize + self.offset as isize) as usize] = color;
+        self.pixels[((b.y as isize) + self.offset as isize) as usize]
+            [(b.x as isize + self.offset as isize) as usize] = color;
+        self.pixels[((c.y as isize) + self.offset as isize) as usize]
+            [(c.x as isize + self.offset as isize) as usize] = color;
 
-        let a = Vector2D::from_coord(a.1 as f32, a.0 as f32);
-        let b = Vector2D::from_coord(b.1 as f32, b.0 as f32);
-        let c = Vector2D::from_coord(c.1 as f32, c.0 as f32);
         let ab = b - a;
         let bc = c - b;
         let ca = a - c;
 
-        let min_x = a.x.min(b.x).min(c.x) as usize;
-        let max_x = a.x.max(b.x).max(c.x) as usize;
-        let min_y = a.y.min(b.y).min(c.y) as usize;
-        let max_y = a.y.max(b.y).max(c.y) as usize;
+        let min_x = a.x.min(b.x).min(c.x) as isize;
+        let max_x = a.x.max(b.x).max(c.x) as isize;
+        let min_y = a.y.min(b.y).min(c.y) as isize;
+        let max_y = a.y.max(b.y).max(c.y) as isize;
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
@@ -135,31 +136,25 @@ impl Image {
                 let z3 = ca.cross_product(&cp);
 
                 if (z1 >= 0.0 && z2 >= 0.0 && z3 >= 0.0) || (z1 <= 0.0 && z2 <= 0.0 && z3 <= 0.0) {
-                    self.pixels[x][y] = color;
+                    self.pixels[(y as isize + self.offset as isize) as usize]
+                        [(x as isize + self.offset as isize) as usize] = color;
                 }
             }
         }
     }
 
-    pub fn draw_triangle2(
-        &mut self,
-        a: (u32, u32),
-        b: (u32, u32),
-        c: (u32, u32),
-        color: (u8, u8, u8),
-    ) {
-        self.pixels[a.1 as usize][a.0 as usize] = color;
-        self.pixels[b.1 as usize][b.0 as usize] = color;
-        self.pixels[c.1 as usize][c.0 as usize] = color;
+    pub fn draw_triangle2(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+        self.pixels[((a.y as isize) + self.offset as isize) as usize]
+            [(a.x as isize + self.offset as isize) as usize] = color;
+        self.pixels[((b.y as isize) + self.offset as isize) as usize]
+            [(b.x as isize + self.offset as isize) as usize] = color;
+        self.pixels[((c.y as isize) + self.offset as isize) as usize]
+            [(c.x as isize + self.offset as isize) as usize] = color;
 
-        let a = Vector2D::from_coord(a.0 as f32, a.1 as f32);
-        let b = Vector2D::from_coord(b.0 as f32, b.1 as f32);
-        let c = Vector2D::from_coord(c.0 as f32, c.1 as f32);
-
-        let min_x = a.x.min(b.x).min(c.x) as usize;
-        let max_x = a.x.max(b.x).max(c.x) as usize;
-        let min_y = a.y.min(b.y).min(c.y) as usize;
-        let max_y = a.y.max(b.y).max(c.y) as usize;
+        let min_x = a.x.min(b.x).min(c.x) as isize;
+        let max_x = a.x.max(b.x).max(c.x) as isize;
+        let min_y = a.y.min(b.y).min(c.y) as isize;
+        let max_y = a.y.max(b.y).max(c.y) as isize;
 
         let (cond0, cond1, cond2) = Self::conditions(a, b, c);
 
@@ -169,7 +164,8 @@ impl Image {
                     && cond1(x as f32, y as f32)
                     && cond2(x as f32, y as f32)
                 {
-                    self.pixels[y][x] = color;
+                    self.pixels[(y as isize + self.offset as isize) as usize]
+                        [(x as isize + self.offset as isize) as usize] = color;
                 }
             }
         }
