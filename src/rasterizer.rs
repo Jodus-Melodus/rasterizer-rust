@@ -5,11 +5,14 @@ use std::io::Write;
 use std::vec;
 
 use vector_2d_3d::Vector2D;
+use vector_2d_3d::Vector3D;
 
 #[derive(PartialEq)]
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
     offset: usize,
+    width: usize,
+    height: usize,
 }
 
 impl Image {
@@ -32,12 +35,27 @@ impl Image {
         Image {
             pixels: vec![vec![(0, 0, 0); width]; height],
             offset: width / 2,
+            width,
+            height,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        for row in self.pixels.iter_mut() {
+            for pixel in row.iter_mut() {
+                *pixel = (0, 0, 0);
+            }
         }
     }
 
     pub fn from_array(pixels: Vec<Vec<(u8, u8, u8)>>) -> Self {
         let offset = pixels.len() / 2;
-        Image { pixels, offset }
+        Image {
+            pixels: pixels.clone(),
+            offset,
+            width: pixels.len(),
+            height: pixels[0].len(),
+        }
     }
 
     fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
@@ -235,5 +253,25 @@ impl Image {
                 }
             }
         }
+    }
+
+    pub fn project_3d_to_2d(&self, point: Vector3D, camera: Vector3D) -> Option<Vector2D> {
+        let dz = point.z - camera.z;
+        if dz == 0.0 {
+            return None;
+        }
+        let projected_x = (point.x - camera.x) * (camera.z / dz);
+        let projected_y = (point.y - camera.y) * (camera.z / dz);
+        if !projected_x.is_finite() || !projected_y.is_finite() {
+            return None;
+        }
+        if projected_x < -(self.offset as f32)
+            || projected_x >= self.offset as f32
+            || projected_y < -(self.offset as f32)
+            || projected_y >= self.offset as f32
+        {
+            return None;
+        }
+        Some(Vector2D::from_coord(projected_x, projected_y))
     }
 }
