@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Cursor;
 use std::io::Result;
@@ -30,11 +31,84 @@ pub const PYRAMID: [(f32, f32, f32); 5] = [
 
 pub const COLORS: [(u8, u8, u8); 3] = [(0xFF, 0x00, 0x00), (0x00, 0xFF, 0x00), (0x00, 0x00, 0xFF)];
 
+fn make_font() -> HashMap<char, [u8; 15]> {
+    let mut font = HashMap::new();
+
+    font.insert('A', [0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('B', [1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0]);
+    font.insert('C', [0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1]);
+    font.insert('D', [1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0]);
+    font.insert('E', [1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1]);
+    font.insert('F', [1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0]);
+    font.insert('G', [0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1]);
+    font.insert('H', [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('I', [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1]);
+    font.insert('J', [0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0]);
+    font.insert('K', [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1]);
+    font.insert('L', [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1]);
+    font.insert('M', [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('N', [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('O', [0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0]);
+    font.insert('P', [1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0]);
+    font.insert('Q', [0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1]);
+    font.insert('R', [1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1]);
+    font.insert('S', [0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0]);
+    font.insert('T', [1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    font.insert('U', [1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0]);
+    font.insert('V', [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0]);
+    font.insert('W', [1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1]);
+    font.insert('X', [1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1]);
+    font.insert('Y', [1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    font.insert('Z', [1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1]);
+    font.insert(':', [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]);
+    font.insert('0', [0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0]);
+    font.insert('1', [0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1]);
+    font.insert('2', [1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1]);
+    font.insert('3', [1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0]);
+    font.insert('4', [1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1]);
+    font.insert('5', [1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0]);
+    font.insert('6', [0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0]);
+    font.insert('7', [1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    font.insert('8', [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]);
+    font.insert('9', [0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0]);
+    font.insert(' ', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    font.insert('a', [0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1]);
+    font.insert('b', [1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0]);
+    font.insert('c', [0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1]);
+    font.insert('d', [0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1]);
+    font.insert('e', [0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1]);
+    font.insert('f', [0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0]);
+    font.insert('g', [0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0]);
+    font.insert('h', [1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1]);
+    font.insert('i', [0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1]);
+    font.insert('j', [0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0]);
+    font.insert('k', [1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1]);
+    font.insert('l', [1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1]);
+    font.insert('m', [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('n', [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1]);
+    font.insert('o', [0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0]);
+    font.insert('p', [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0]);
+    font.insert('q', [0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1]);
+    font.insert('r', [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0]);
+    font.insert('s', [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0]);
+    font.insert('t', [0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1]);
+    font.insert('u', [0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1]);
+    font.insert('v', [0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0]);
+    font.insert('w', [0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1]);
+    font.insert('x', [0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]);
+    font.insert('y', [0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0]);
+    font.insert('z', [0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1]);
+    font.insert('.', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+    font
+}
+
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
     offset: usize,
     width: usize,
     height: usize,
+    font: HashMap<char, [u8; 15]>,
 }
 
 impl Image {
@@ -53,6 +127,7 @@ impl Image {
             offset: width / 2,
             width,
             height,
+            font: make_font(),
         }
     }
 
@@ -65,8 +140,10 @@ impl Image {
     }
 
     pub fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
-        self.pixels[(point.y as isize + self.offset as isize) as usize]
-            [(point.x as isize + self.offset as isize) as usize] = color;
+        self.pixels
+            [((point.y as isize + self.offset as isize) as usize).clamp(0, self.width - 1)]
+            [((point.x as isize + self.offset as isize) as usize).clamp(0, self.height - 1)] =
+            color;
     }
 
     fn get_max_min_coords(a: Vector2D, b: Vector2D, c: Vector2D) -> (isize, isize, isize, isize) {
@@ -286,5 +363,25 @@ impl Image {
             return None;
         }
         Some(Vector2D::from_coord(-projected_x, -projected_y))
+    }
+
+    pub fn draw_text(&mut self, text: &str, coordinate: Vector2D, color: (u8, u8, u8)) {
+        let mut offset = 5.0;
+        for letter in text.chars() {
+            let map = *self.font.get(&letter).unwrap();
+
+            for r in (0..5).rev() {
+                for c in (0..3).rev() {
+                    if map[3 * r + c] == 1 {
+                        let point = Vector2D::from_coord(
+                            offset + coordinate.x + c as f32,
+                            coordinate.y - r as f32,
+                        );
+                        self.draw_point(point, color);
+                    }
+                }
+            }
+            offset += 5.0;
+        }
     }
 }
