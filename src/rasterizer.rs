@@ -30,7 +30,6 @@ pub const PYRAMID: [(f32, f32, f32); 5] = [
 
 pub const COLORS: [(u8, u8, u8); 3] = [(0xFF, 0x00, 0x00), (0x00, 0xFF, 0x00), (0x00, 0x00, 0xFF)];
 
-#[derive(PartialEq)]
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
     offset: usize,
@@ -62,16 +61,6 @@ impl Image {
             for pixel in row.iter_mut() {
                 *pixel = (0, 0, 0);
             }
-        }
-    }
-
-    pub fn from_array(pixels: Vec<Vec<(u8, u8, u8)>>) -> Self {
-        let offset = pixels.len() / 2;
-        Image {
-            pixels: pixels.clone(),
-            offset,
-            width: pixels.len(),
-            height: pixels[0].len(),
         }
     }
 

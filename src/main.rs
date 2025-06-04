@@ -2,7 +2,7 @@ mod rasterizer;
 use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
 use std::{
-    io::{stdin, stdout, Read, Result, Write},
+    io::{stdin, stdout, Result, Write},
     time::Instant,
 };
 use vector_2d_3d::{Vector2D, Vector3D};
