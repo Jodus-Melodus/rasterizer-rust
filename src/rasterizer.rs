@@ -7,6 +7,29 @@ use std::vec;
 use vector_2d_3d::Vector2D;
 use vector_2d_3d::Vector3D;
 
+pub const CUBE: [(f32, f32, f32); 8] = [
+    (-1.0, -1.0, -1.0),
+    (-1.0, -1.0, 1.0),
+    (-1.0, 1.0, -1.0),
+    (-1.0, 1.0, 1.0),
+    (1.0, -1.0, -1.0),
+    (1.0, -1.0, 1.0),
+    (1.0, 1.0, -1.0),
+    (1.0, 1.0, 1.0),
+];
+
+pub const TRIANGLE: [(f32, f32, f32); 3] = [(0.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)];
+
+pub const PYRAMID: [(f32, f32, f32); 5] = [
+    (0.0, 40.0, -20.0),
+    (15.0, 0.0, -35.0),
+    (-15.0, 0.0, -5.0),
+    (15.0, 0.0, -5.0),
+    (-15.0, 0.0, -35.0),
+];
+
+pub const COLORS: [(u8, u8, u8); 3] = [(0xFF, 0x00, 0x00), (0x00, 0xFF, 0x00), (0x00, 0x00, 0xFF)];
+
 #[derive(PartialEq)]
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
@@ -16,12 +39,6 @@ pub struct Image {
 }
 
 impl Image {
-    pub const RED: (u8, u8, u8) = (0xFF, 0x00, 0x00);
-    pub const GREEN: (u8, u8, u8) = (0x00, 0xFF, 0x00);
-    pub const BLUE: (u8, u8, u8) = (0x00, 0x00, 0xFF);
-    pub const WHITE: (u8, u8, u8) = (0xFF, 0xFF, 0xFF);
-    pub const BLACK: (u8, u8, u8) = (0x00, 0x00, 0x00);
-
     pub fn to_u32_buffer(&self) -> Vec<u32> {
         self.pixels
             .iter()
@@ -58,7 +75,7 @@ impl Image {
         }
     }
 
-    fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
         self.pixels[(point.y as isize + self.offset as isize) as usize]
             [(point.x as isize + self.offset as isize) as usize] = color;
     }
@@ -255,23 +272,30 @@ impl Image {
         }
     }
 
-    pub fn project_3d_to_2d(&self, point: Vector3D, camera: Vector3D) -> Option<Vector2D> {
+    pub fn project_3d_to_2d(
+        &self,
+        point: Vector3D,
+        camera: Vector3D,
+        focal_length: f32,
+    ) -> Option<Vector2D> {
         let dz = point.z - camera.z;
         if dz == 0.0 {
             return None;
         }
-        let projected_x = (point.x - camera.x) * (camera.z / dz);
-        let projected_y = (point.y - camera.y) * (camera.z / dz);
+        let projected_x = (point.x - camera.x) * (focal_length / dz);
+        let projected_y = (point.y - camera.y) * (focal_length / dz);
         if !projected_x.is_finite() || !projected_y.is_finite() {
             return None;
         }
-        if projected_x < -(self.offset as f32)
-            || projected_x >= self.offset as f32
-            || projected_y < -(self.offset as f32)
-            || projected_y >= self.offset as f32
+        let screen_x = projected_x + self.offset as f32;
+        let screen_y = projected_y + self.offset as f32;
+        if screen_x < 0.0
+            || screen_x >= self.width as f32
+            || screen_y < 0.0
+            || screen_y >= self.height as f32
         {
             return None;
         }
-        Some(Vector2D::from_coord(projected_x, projected_y))
+        Some(Vector2D::from_coord(-projected_x, -projected_y))
     }
 }
