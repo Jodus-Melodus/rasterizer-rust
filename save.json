@@ -85,6 +85,36 @@
         ]
     },
     {
+        "name": "triangle",
+        "points": [
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ]
+        ],
+        "color": [
+            255,
+            0,
+            0
+        ],
+        "rotation": [
+            true,
+            true,
+            true
+        ]
+    },
+    {
         "text": "Hello World",
         "origin": [
             0.0,

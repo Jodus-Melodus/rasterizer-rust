@@ -24,9 +24,9 @@
             0
         ],
         "rotation": [
+            false,
             true,
-            true,
-            true
+            false
         ]
     }
 ]
