@@ -22,6 +22,11 @@
             255,
             0,
             0
+        ],
+        "rotation": [
+            true,
+            true,
+            true
         ]
     }
 ]

@@ -5,6 +5,7 @@ pub struct Object {
     pub name: String,
     pub points: Vec<[f32; 3]>,
     pub color: [u8; 3],
+    pub rotation: [bool; 3],
 }
 
 #[derive(Deserialize, Clone, Debug)]

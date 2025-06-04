@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::Cursor;
 use std::io::Result;
 use std::io::Write;
+use std::time::Instant;
 use std::vec;
 
 use vector_2d_3d::Vector2D;
@@ -360,5 +361,41 @@ impl Image {
             }
             offset += 5.0;
         }
+    }
+
+    pub fn rotate(point: Vector3D, delta_time: Instant, rotation: (bool, bool, bool)) -> Vector3D {
+        let angle = delta_time.elapsed().as_secs_f32() * 0.5;
+        let cos_a = angle.cos();
+        let sin_a = angle.sin();
+
+        let mut result = point;
+
+        if rotation.0 {
+            // Rotation around X axis
+            result = Vector3D::from_coord(
+                result.x,
+                result.y * cos_a - result.z * sin_a,
+                result.y * sin_a + result.z * cos_a,
+            );
+        }
+
+        if rotation.1 {
+            // Rotation around Y axis
+            result = Vector3D::from_coord(
+                result.x * cos_a + result.z * sin_a,
+                result.y,
+                -result.x * sin_a + result.z * cos_a,
+            );
+        }
+        if rotation.2 {
+            // Rotation around Z axis
+            result = Vector3D::from_coord(
+                result.x * cos_a - result.y * sin_a,
+                result.x * sin_a + result.y * cos_a,
+                result.z,
+            );
+        }
+
+        result
     }
 }

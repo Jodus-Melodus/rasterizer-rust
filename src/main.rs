@@ -30,7 +30,9 @@ fn read_render_file() -> Result<(Vec<Object>, Vec<Text>)> {
     Ok((objects, text))
 }
 
-fn objects_to_points(objects: Vec<Object>) -> Vec<(Vec<Vector3D>, (u8, u8, u8))> {
+fn objects_to_points(
+    objects: Vec<Object>,
+) -> Vec<(Vec<Vector3D>, (u8, u8, u8), (bool, bool, bool))> {
     let mut objs = Vec::new();
 
     for object in objects {
@@ -39,7 +41,11 @@ fn objects_to_points(objects: Vec<Object>) -> Vec<(Vec<Vector3D>, (u8, u8, u8))>
             .iter()
             .map(|pts| Vector3D::from_coord(pts[0], pts[1], pts[2]))
             .collect::<Vec<Vector3D>>();
-        objs.push((points, Into::<(u8, u8, u8)>::into(object.color)));
+        objs.push((
+            points,
+            Into::<(u8, u8, u8)>::into(object.color),
+            Into::<(bool, bool, bool)>::into(object.rotation),
+        ));
     }
 
     objs
@@ -79,8 +85,6 @@ fn main() -> Result<()> {
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
 
     let (objects, text) = read_render_file().unwrap();
-    println!("{:#?}", objects);
-
     let objects = objects_to_points(objects);
     let text = text_to_points(text);
 
@@ -110,9 +114,13 @@ fn main() -> Result<()> {
 
         // draw objects
         for object in &objects {
-            let (points, color) = object;
+            let (points, color, rotation) = object;
+            let rotated_points = points
+                .iter()
+                .map(|point| Image::rotate(*point, start_time, *rotation))
+                .collect::<Vec<Vector3D>>();
 
-            let projected_points = points
+            let projected_points = rotated_points
                 .iter()
                 .map(|point| img.project_3d_to_2d(*point, camera, focal_length))
                 .collect::<Vec<Option<Vector2D>>>();
