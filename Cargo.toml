@@ -6,4 +6,6 @@ edition = "2021"
 [dependencies]
 minifb = "0.28.0"
 rand = "0.9.1"
-vector_2d_3d = "0.3.0"
+serde = {version = "1.0.219", features = ["derive"]}
+serde_json = "1.0.140"
+vector_2d_3d = "=0.5.0"

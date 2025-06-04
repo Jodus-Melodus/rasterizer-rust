@@ -1,13 +1,16 @@
 mod rasterizer;
 use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
+use serde_json::from_reader;
 use std::{
-    io::{stdin, stdout, Result, Write},
+    fs::File,
+    io::{stdin, stdout, BufReader, Result, Write},
     time::Instant,
 };
 use vector_2d_3d::{Vector2D, Vector3D};
 
-use crate::rasterizer::{COLORS, TRIANGLE};
+use crate::render_objects::{Object, Text};
+mod render_objects;
 
 fn read_line(prompt: &str) -> String {
     let mut input = String::new();
@@ -15,6 +18,45 @@ fn read_line(prompt: &str) -> String {
     stdout().flush().unwrap();
     stdin().read_line(&mut input).expect("Failed to read line");
     input.trim().to_string()
+}
+
+fn read_render_file() -> Result<(Vec<Object>, Vec<Text>)> {
+    let object_file = File::open("objects.json")?;
+    let text_file = File::open("text.json")?;
+    let object_reader = BufReader::new(object_file);
+    let text_reader = BufReader::new(text_file);
+    let objects: Vec<Object> = from_reader(object_reader)?;
+    let text: Vec<Text> = from_reader(text_reader)?;
+    Ok((objects, text))
+}
+
+fn objects_to_points(objects: Vec<Object>) -> Vec<(Vec<Vector3D>, (u8, u8, u8))> {
+    let mut objs = Vec::new();
+
+    for object in objects {
+        let points = object
+            .points
+            .iter()
+            .map(|pts| Vector3D::from_coord(pts[0], pts[1], pts[2]))
+            .collect::<Vec<Vector3D>>();
+        objs.push((points, Into::<(u8, u8, u8)>::into(object.color)));
+    }
+
+    objs
+}
+
+fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, (u8, u8, u8))> {
+    let mut txt = Vec::new();
+
+    for t in text {
+        txt.push((
+            t.text,
+            Vector2D::from_coord(t.origin[0], t.origin[1]),
+            Into::<(u8, u8, u8)>::into(t.color),
+        ));
+    }
+
+    txt
 }
 
 fn main() -> Result<()> {
@@ -35,16 +77,17 @@ fn main() -> Result<()> {
     let mut should_close = false;
     let mut img = Image::new(width, height);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
-    let points = TRIANGLE;
 
-    let points = points
-        .iter()
-        .map(|(x, y, z)| Vector3D::from_coord(*x, *y, *z))
-        .collect::<Vec<Vector3D>>();
+    let (objects, text) = read_render_file().unwrap();
+    println!("{:#?}", objects);
+
+    let objects = objects_to_points(objects);
+    let text = text_to_points(text);
 
     while window.is_open() && !should_close {
         img.clear();
 
+        // key binds
         for key in window.get_keys_pressed(minifb::KeyRepeat::Yes) {
             match key {
                 Key::S => camera.z += camera_movement_speed,
@@ -65,42 +108,36 @@ fn main() -> Result<()> {
             focal_length = (focal_length + -scroll_y * scroll_sensitivity).clamp(1.0, 500.0);
         }
 
-        let angle = start_time.elapsed().as_secs_f32() * 0.5;
-        let cos_a = angle.cos();
-        let sin_a = angle.sin();
+        // draw objects
+        for object in &objects {
+            let (points, color) = object;
 
-        let points: Vec<Vector3D> = points
-            .iter()
-            .map(|p| {
-                Vector3D::from_coord(p.x * cos_a - p.z * sin_a, p.y, p.x * sin_a + p.z * cos_a)
-            })
-            .collect();
+            let projected_points = points
+                .iter()
+                .map(|point| img.project_3d_to_2d(*point, camera, focal_length))
+                .collect::<Vec<Option<Vector2D>>>();
 
-        let projected_points = points
-            .iter()
-            .map(|point| Image::project_3d_to_2d(&img, *point, camera, focal_length))
-            .collect::<Vec<Option<Vector2D>>>();
-
-        for i in 1..projected_points.len() - 1 {
-            if let (Some(p0), Some(p1), Some(p2)) = (
-                projected_points[0],
-                projected_points[i],
-                projected_points[i + 1],
-            ) {
-                img.draw_triangle4(p0, p1, p2, COLORS[i % COLORS.len()]);
+            for i in 1..projected_points.len() - 1 {
+                if let (Some(p0), Some(p1), Some(p2)) = (
+                    projected_points[0],
+                    projected_points[i],
+                    projected_points[i + 1],
+                ) {
+                    img.draw_triangle4(p0, p1, p2, *color);
+                }
             }
+        }
+
+        // draw text
+        for txt in &text {
+            let (t, origin, color) = txt;
+            img.draw_text(t, *origin, *color);
         }
 
         let frame_time = last_frame_time.elapsed().as_secs_f32();
         last_frame_time = Instant::now();
         frame_count += 1;
-        let text = format!("Fps: {:.2}", 1.0 / frame_time);
-        println!("{}", text);
-        img.draw_text(
-            &text,
-            Vector2D::from_coord(width as f32 / -2.0, height as f32 / 2.0 - 5.0),
-            COLORS[0],
-        );
+        println!("Fps: {:.2}", 1.0 / frame_time);
 
         window
             .update_with_buffer(&img.to_u32_buffer(), width, height)
@@ -111,8 +148,6 @@ fn main() -> Result<()> {
         "Average fps: {:.2}",
         frame_count as f32 / start_time.elapsed().as_secs_f32()
     );
-
-    img.save_bmp("test.bmp")?;
 
     read_line("Press Enter to close");
     Ok(())
