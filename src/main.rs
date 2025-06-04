@@ -65,18 +65,42 @@ fn main() -> Result<()> {
             focal_length = (focal_length + -scroll_y * scroll_sensitivity).clamp(1.0, 500.0);
         }
 
-        // draw(focal_length, camera, start_time, &mut img, &points);
+        let angle = start_time.elapsed().as_secs_f32() * 0.5;
+        let cos_a = angle.cos();
+        let sin_a = angle.sin();
+
+        let points: Vec<Vector3D> = points
+            .iter()
+            .map(|p| {
+                Vector3D::from_coord(p.x * cos_a - p.z * sin_a, p.y, p.x * sin_a + p.z * cos_a)
+            })
+            .collect();
+
+        let projected_points = points
+            .iter()
+            .map(|point| Image::project_3d_to_2d(&img, *point, camera, focal_length))
+            .collect::<Vec<Option<Vector2D>>>();
+
+        for i in 1..projected_points.len() - 1 {
+            if let (Some(p0), Some(p1), Some(p2)) = (
+                projected_points[0],
+                projected_points[i],
+                projected_points[i + 1],
+            ) {
+                img.draw_triangle4(p0, p1, p2, COLORS[i % COLORS.len()]);
+            }
+        }
 
         let frame_time = last_frame_time.elapsed().as_secs_f32();
         last_frame_time = Instant::now();
         frame_count += 1;
         let text = format!("Fps: {:.2}", 1.0 / frame_time);
+        println!("{}", text);
         img.draw_text(
             &text,
             Vector2D::from_coord(width as f32 / -2.0, height as f32 / 2.0 - 5.0),
             COLORS[0],
         );
-        println!("fps: {:.2}", 1.0 / frame_time);
 
         window
             .update_with_buffer(&img.to_u32_buffer(), width, height)
@@ -92,36 +116,4 @@ fn main() -> Result<()> {
 
     read_line("Press Enter to close");
     Ok(())
-}
-
-fn draw(
-    focal_length: f32,
-    camera: Vector3D,
-    start_time: Instant,
-    img: &mut Image,
-    points: &Vec<Vector3D>,
-) {
-    let angle = start_time.elapsed().as_secs_f32() * 0.5;
-    let cos_a = angle.cos();
-    let sin_a = angle.sin();
-
-    let points: Vec<Vector3D> = points
-        .iter()
-        .map(|p| Vector3D::from_coord(p.x * cos_a - p.z * sin_a, p.y, p.x * sin_a + p.z * cos_a))
-        .collect();
-
-    let projected_points = points
-        .iter()
-        .map(|point| Image::project_3d_to_2d(&*img, *point, camera, focal_length))
-        .collect::<Vec<Option<Vector2D>>>();
-
-    for i in 1..projected_points.len() - 1 {
-        if let (Some(p0), Some(p1), Some(p2)) = (
-            projected_points[0],
-            projected_points[i],
-            projected_points[i + 1],
-        ) {
-            img.draw_triangle4(p0, p1, p2, COLORS[i % COLORS.len()]);
-        }
-    }
 }
