@@ -1,7 +1,11 @@
 mod rasterizer;
 use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
-use std::{io::Result, thread::sleep, time::Duration};
+use std::{
+    io::Result,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 use vector_2d_3d::{Vector2D, Vector3D};
 
 use crate::rasterizer::{COLORS, CUBE, PYRAMID, TRIANGLE};
@@ -12,7 +16,7 @@ fn main() -> Result<()> {
     let mut img = Image::new(width, height);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
 
-    let points = PYRAMID;
+    let points = CUBE;
 
     let points = points
         .iter()
@@ -20,11 +24,13 @@ fn main() -> Result<()> {
         .collect::<Vec<Vector3D>>();
 
     let focal_length = 250.0;
-    let start_time = std::time::Instant::now();
+    let start_time = Instant::now();
+    let mut last_frame_time = Instant::now();
+    let mut frame_count = 0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         img.clear();
-        let camera = Vector3D::from_coord(0.0, 0.0, 50.0);
+        let camera = Vector3D::from_coord(0.0, 0.0, 5.0);
 
         let angle = start_time.elapsed().as_secs_f32() * 0.5;
         let cos_a = angle.cos();
@@ -52,12 +58,20 @@ fn main() -> Result<()> {
             }
         }
 
+        let frame_time = last_frame_time.elapsed().as_secs_f32();
+        last_frame_time = Instant::now();
+        frame_count += 1;
+        println!("fps: {:.2}", 1.0 / frame_time);
+
         window
             .update_with_buffer(&img.to_u32_buffer(), width, height)
             .unwrap();
-
-        sleep(Duration::from_millis(50));
     }
+
+    println!(
+        "Average fps: {:.2}",
+        frame_count as f32 / start_time.elapsed().as_secs_f32()
+    );
 
     Ok(())
 }
