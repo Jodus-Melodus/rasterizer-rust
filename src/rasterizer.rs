@@ -40,6 +40,20 @@ impl Image {
         Image { pixels, offset }
     }
 
+    fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
+        self.pixels[(point.y as isize + self.offset as isize) as usize]
+            [(point.x as isize + self.offset as isize) as usize] = color;
+    }
+
+    fn get_max_min_coords(a: Vector2D, b: Vector2D, c: Vector2D) -> (isize, isize, isize, isize) {
+        (
+            a.x.min(b.x).min(c.x) as isize,
+            a.x.max(b.x).max(c.x) as isize,
+            a.y.min(b.y).min(c.y) as isize,
+            a.y.max(b.y).max(c.y) as isize,
+        )
+    }
+
     pub fn save_bmp(&self, path: &str) -> Result<()> {
         println!("Saving...");
         let height = self.pixels.len();
@@ -91,21 +105,10 @@ impl Image {
     }
 
     pub fn draw_triangle1(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
-        self.pixels[((a.y as isize) + self.offset as isize) as usize]
-            [(a.x as isize + self.offset as isize) as usize] = color;
-        self.pixels[((b.y as isize) + self.offset as isize) as usize]
-            [(b.x as isize + self.offset as isize) as usize] = color;
-        self.pixels[((c.y as isize) + self.offset as isize) as usize]
-            [(c.x as isize + self.offset as isize) as usize] = color;
-
         let ab = b - a;
         let bc = c - b;
         let ca = a - c;
-
-        let min_x = a.x.min(b.x).min(c.x) as isize;
-        let max_x = a.x.max(b.x).max(c.x) as isize;
-        let min_y = a.y.min(b.y).min(c.y) as isize;
-        let max_y = a.y.max(b.y).max(c.y) as isize;
+        let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
@@ -120,36 +123,21 @@ impl Image {
                 let z3 = ca.cross_product(&cp);
 
                 if (z1 >= 0.0 && z2 >= 0.0 && z3 >= 0.0) || (z1 <= 0.0 && z2 <= 0.0 && z3 <= 0.0) {
-                    self.pixels[(y as isize + self.offset as isize) as usize]
-                        [(x as isize + self.offset as isize) as usize] = color;
+                    self.draw_point(p, color);
                 }
             }
         }
     }
 
     pub fn draw_triangle2(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
-        self.pixels[((a.y as isize) + self.offset as isize) as usize]
-            [(a.x as isize + self.offset as isize) as usize] = color;
-        self.pixels[((b.y as isize) + self.offset as isize) as usize]
-            [(b.x as isize + self.offset as isize) as usize] = color;
-        self.pixels[((c.y as isize) + self.offset as isize) as usize]
-            [(c.x as isize + self.offset as isize) as usize] = color;
-
-        let min_x = a.x.min(b.x).min(c.x) as isize;
-        let max_x = a.x.max(b.x).max(c.x) as isize;
-        let min_y = a.y.min(b.y).min(c.y) as isize;
-        let max_y = a.y.max(b.y).max(c.y) as isize;
-
+        let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
         let (cond0, cond1, cond2) = Self::conditions(a, b, c);
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
-                if cond0(x as f32, y as f32)
-                    && cond1(x as f32, y as f32)
-                    && cond2(x as f32, y as f32)
-                {
-                    self.pixels[(y as isize + self.offset as isize) as usize]
-                        [(x as isize + self.offset as isize) as usize] = color;
+                let p = Vector2D::from_coord(x as f32, y as f32);
+                if cond0(p.x, p.y) && cond1(p.x, p.y) && cond2(p.x, p.y) {
+                    self.draw_point(p, color);
                 }
             }
         }
@@ -207,5 +195,45 @@ impl Image {
         };
 
         (condition0, condition1, condition2)
+    }
+
+    pub fn draw_triangle3(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+        let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
+        let area = (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)).abs() / 2.0;
+
+        for x in min_x..=max_x {
+            for y in min_y..=max_y {
+                let p = Vector2D::from_coord(x as f32, y as f32);
+
+                let area_abp =
+                    (a.x * (b.y - p.y) + b.x * (p.y - a.y) + p.x * (a.y - b.y)).abs() / 2.0;
+                let area_bcp =
+                    (b.x * (c.y - p.y) + c.x * (p.y - b.y) + p.x * (b.y - c.y)).abs() / 2.0;
+                let area_acp =
+                    (a.x * (c.y - p.y) + c.x * (p.y - a.y) + p.x * (a.y - c.y)).abs() / 2.0;
+
+                if (area_abp + area_bcp + area_acp - area).abs() < 1e-6 {
+                    self.draw_point(p, color);
+                }
+            }
+        }
+    }
+
+    pub fn draw_triangle4(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+        let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
+
+        for x in min_x..=max_x {
+            for y in min_y..=max_y {
+                let p = Vector2D::from_coord(x as f32, y as f32);
+
+                let w1 = (a.x * (c.y - a.y) + (p.y - a.y) * (c.x - a.x) - p.x * (c.y - a.y))
+                    / ((b.y - a.y) * (c.x - a.x) - (b.x - a.x) * (c.y - a.y));
+                let w2 = (p.y - a.y - w1 * (b.y - a.y)) / (c.y - a.y);
+
+                if w1 >= 0.0 && w2 >= 0.0 && (w1 + w2 <= 1.0) {
+                    self.draw_point(p, color);
+                }
+            }
+        }
     }
 }

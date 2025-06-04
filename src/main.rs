@@ -17,7 +17,7 @@ fn main() -> Result<()> {
         .collect::<Vec<Vector2D>>();
 
     for i in 1..points.len() - 1 {
-        img.draw_triangle2(points[0], points[i], points[i + 1], Image::BLUE);
+        img.draw_triangle4(points[0], points[i], points[i + 1], Image::BLUE);
     }
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
