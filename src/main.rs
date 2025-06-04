@@ -2,35 +2,68 @@ mod rasterizer;
 use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
 use std::{
-    io::Result,
-    thread::sleep,
-    time::{Duration, Instant},
+    io::{stdin, stdout, Read, Result, Write},
+    time::Instant,
 };
 use vector_2d_3d::{Vector2D, Vector3D};
 
-use crate::rasterizer::{COLORS, CUBE, PYRAMID, TRIANGLE};
+use crate::rasterizer::{COLORS, TRIANGLE};
+
+fn read_line(prompt: &str) -> String {
+    let mut input = String::new();
+    print!("{}", prompt);
+    stdout().flush().unwrap();
+    stdin().read_line(&mut input).expect("Failed to read line");
+    input.trim().to_string()
+}
 
 fn main() -> Result<()> {
-    let width = 512;
-    let height = 512;
+    let width = read_line("Width: ").parse::<usize>().unwrap_or(512);
+    let height = read_line("Height: ").parse::<usize>().unwrap_or(512);
+    let mut focal_length = read_line("Focal Length: ").parse::<f32>().unwrap_or(200.0);
+    let camera_movement_speed = read_line("Camera Movement Speed: ")
+        .parse::<f32>()
+        .unwrap_or(0.1);
+    let scroll_sensitivity = read_line("Scroll Sensitivity: ")
+        .parse::<f32>()
+        .unwrap_or(5.0);
+
+    let mut camera = Vector3D::from_coord(0.0, 0.0, 5.0);
+    let start_time = Instant::now();
+    let mut last_frame_time = Instant::now();
+    let mut frame_count = 0;
+    let mut should_close = false;
     let mut img = Image::new(width, height);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
-
-    let points = CUBE;
+    let points = TRIANGLE;
 
     let points = points
         .iter()
         .map(|(x, y, z)| Vector3D::from_coord(*x, *y, *z))
         .collect::<Vec<Vector3D>>();
 
-    let focal_length = 250.0;
-    let start_time = Instant::now();
-    let mut last_frame_time = Instant::now();
-    let mut frame_count = 0;
-
-    while window.is_open() && !window.is_key_down(Key::Escape) {
+    while window.is_open() && !should_close {
         img.clear();
-        let camera = Vector3D::from_coord(0.0, 0.0, 5.0);
+
+        for key in window.get_keys_pressed(minifb::KeyRepeat::Yes) {
+            match key {
+                Key::S => camera.z += camera_movement_speed,
+                Key::W => camera.z -= camera_movement_speed,
+                Key::A => camera.x -= camera_movement_speed,
+                Key::D => camera.x += camera_movement_speed,
+                Key::Q => camera.y -= camera_movement_speed,
+                Key::E => camera.y += camera_movement_speed,
+                Key::Escape => {
+                    should_close = true;
+                }
+                _ => (),
+            }
+        }
+
+        let (_scroll_x, scroll_y) = window.get_scroll_wheel().unwrap_or((0.0, 0.0));
+        if scroll_y != 0.0 {
+            focal_length = (focal_length + -scroll_y * scroll_sensitivity).clamp(1.0, 500.0);
+        }
 
         let angle = start_time.elapsed().as_secs_f32() * 0.5;
         let cos_a = angle.cos();
@@ -73,5 +106,6 @@ fn main() -> Result<()> {
         frame_count as f32 / start_time.elapsed().as_secs_f32()
     );
 
+    read_line("Press Enter to close");
     Ok(())
 }
