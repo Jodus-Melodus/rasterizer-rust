@@ -49,7 +49,7 @@ fn read_render_file() -> Result<(Vec<Vec<Object>>, Vec<Text>)> {
 
 fn objects_to_points(
     object_array: Vec<Vec<Object>>,
-) -> Vec<(Vec<Vector3D>, (u8, u8, u8), (bool, bool, bool))> {
+) -> Vec<(Vec<Vector3D>, u32, (bool, bool, bool))> {
     let mut objs = Vec::new();
 
     for objects in object_array {
@@ -62,7 +62,7 @@ fn objects_to_points(
             if object.draw {
                 objs.push((
                     points,
-                    Into::<(u8, u8, u8)>::into(object.color),
+                    object.color,
                     Into::<(bool, bool, bool)>::into(object.rotation),
                 ));
             }
@@ -72,7 +72,7 @@ fn objects_to_points(
     objs
 }
 
-fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, (u8, u8, u8))> {
+fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, u32)> {
     let mut txt = Vec::new();
 
     for t in text {
@@ -80,7 +80,7 @@ fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, (u8, u8, u8))> {
             txt.push((
                 t.text,
                 Vector2D::from_coord(t.origin[0], t.origin[1]),
-                Into::<(u8, u8, u8)>::into(t.color),
+                t.color,
             ));
         }
     }
@@ -196,7 +196,7 @@ fn main() -> Result<()> {
                 (width as isize / -2) as f32 + 5.0,
                 (height as isize / 2) as f32 - 5.0,
             ),
-            (255, 255, 255),
+            u32::MAX,
             2,
         );
         // println!("Fps: {:.2}", fps);

@@ -18,17 +18,13 @@
                 0
             ]
         ],
-        "color": [
-            204,
-            85,
-            0
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side0.5",
@@ -49,17 +45,13 @@
                 -0.5
             ]
         ],
-        "color": [
-            64,
-            224,
-            208
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side2",
@@ -80,17 +72,13 @@
                 0.5
             ]
         ],
-        "color": [
-            255,
-            0,
-            255
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side3",
@@ -111,17 +99,13 @@
                 0
             ]
         ],
-        "color": [
-            255,
-            191,
-            0
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side4",
@@ -142,17 +126,13 @@
                 0
             ]
         ],
-        "color": [
-            80,
-            200,
-            120
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side5",
@@ -173,17 +153,13 @@
                 0
             ]
         ],
-        "color": [
-            65,
-            105,
-            225
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     },
     {
         "name": "boat-side6",
@@ -204,16 +180,12 @@
                 0
             ]
         ],
-        "color": [
-            220,
-            20,
-            60
-        ],
+        "color": 1607085,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     }
 ]

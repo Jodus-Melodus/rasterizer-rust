@@ -18,11 +18,7 @@
                 1.0
             ]
         ],
-        "color": [
-            0,
-            128,
-            128
-        ],
+        "color": 123,
         "rotation": [
             false,
             true,
@@ -49,11 +45,7 @@
                 1.0
             ]
         ],
-        "color": [
-            128,
-            128,
-            0
-        ],
+        "color": 123,
         "rotation": [
             false,
             true,
@@ -80,11 +72,7 @@
                 -1.0
             ]
         ],
-        "color": [
-            0,
-            0,
-            255
-        ],
+        "color": 123,
         "rotation": [
             false,
             true,
@@ -111,11 +99,7 @@
                 1.0
             ]
         ],
-        "color": [
-            255,
-            0,
-            0
-        ],
+        "color": 123,
         "rotation": [
             false,
             true,

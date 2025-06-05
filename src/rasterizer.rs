@@ -82,7 +82,7 @@ fn make_font() -> HashMap<char, [u8; 15]> {
 }
 
 pub struct Image {
-    pixels: Vec<Vec<(u8, u8, u8)>>,
+    pixels: Vec<Vec<u32>>,
     width: usize,
     width_offset: usize,
     height: usize,
@@ -91,18 +91,28 @@ pub struct Image {
 }
 
 impl Image {
+    fn rbg_to_u32(r: u8, g: u8, b: u8) -> u32 {
+        ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+    }
+
+    fn u32_to_rgb(color: u32) -> (u8, u8, u8) {
+        let r = ((color >> 16) & 0xFF) as u8;
+        let g = ((color >> 8) & 0xFF) as u8;
+        let b = (color & 0xFF) as u8;
+        (r, g, b)
+    }
+
     pub fn to_u32_buffer(&self) -> Vec<u32> {
         self.pixels
             .iter()
             .rev()
-            .flat_map(|row| row.iter())
-            .map(|&(r, g, b)| ((r as u32) << 16) | ((g as u32) << 8) | (b as u32))
+            .flat_map(|row| row.iter().copied())
             .collect()
     }
 
     pub fn new(width: usize, height: usize) -> Self {
         Image {
-            pixels: vec![vec![(0, 0, 0); width]; height],
+            pixels: vec![vec![0; width]; height],
             width,
             width_offset: width / 2,
             height,
@@ -114,12 +124,12 @@ impl Image {
     pub fn clear(&mut self) {
         for row in self.pixels.iter_mut() {
             for pixel in row.iter_mut() {
-                *pixel = (0, 0, 0);
+                *pixel = 0;
             }
         }
     }
 
-    pub fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_point(&mut self, point: Vector2D, color: u32) {
         self.pixels[((point.y as isize + self.height_offset as isize) as usize)
             .clamp(0, self.height - 1)]
             [((point.x as isize + self.width_offset as isize) as usize).clamp(0, self.width - 1)] =
@@ -169,9 +179,9 @@ impl Image {
 
         // === PIXEL DATA ===
         for row in self.pixels.iter() {
-            for (r, g, b) in row {
-                // BMP uses BGR order
-                cursor.write_all(&[*b, *g, *r])?;
+            for color in row {
+                let (r, g, b) = Self::u32_to_rgb(*color);
+                cursor.write_all(&[b, g, r])?;
             }
             // Row padding
             for _ in 0..row_padding {
@@ -185,7 +195,7 @@ impl Image {
         Ok(())
     }
 
-    pub fn draw_triangle1(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_triangle1(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: u32) {
         let ab = b - a;
         let bc = c - b;
         let ca = a - c;
@@ -210,7 +220,7 @@ impl Image {
         }
     }
 
-    pub fn draw_triangle2(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_triangle2(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: u32) {
         let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
         let (cond0, cond1, cond2) = Self::conditions(a, b, c);
 
@@ -278,7 +288,7 @@ impl Image {
         (condition0, condition1, condition2)
     }
 
-    pub fn draw_triangle3(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_triangle3(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: u32) {
         let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
         let area = (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)).abs() / 2.0;
 
@@ -300,7 +310,7 @@ impl Image {
         }
     }
 
-    pub fn draw_triangle4(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: (u8, u8, u8)) {
+    pub fn draw_triangle4(&mut self, a: Vector2D, b: Vector2D, c: Vector2D, color: u32) {
         let (min_x, max_x, min_y, max_y) = Self::get_max_min_coords(a, b, c);
 
         for x in min_x..=max_x {
@@ -345,13 +355,7 @@ impl Image {
         Some(Vector2D::from_coord(-projected_x, -projected_y))
     }
 
-    pub fn draw_text(
-        &mut self,
-        text: &str,
-        coordinate: Vector2D,
-        color: (u8, u8, u8),
-        scale: usize,
-    ) {
+    pub fn draw_text(&mut self, text: &str, coordinate: Vector2D, color: u32, scale: usize) {
         let mut offset = 0.0;
         for letter in text.chars() {
             let map = *self.font.get(&letter).unwrap_or(&[0; 15]);

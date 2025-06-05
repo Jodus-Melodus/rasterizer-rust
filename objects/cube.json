@@ -43,11 +43,7 @@
                 1.0
             ]
         ],
-        "color": [
-            255,
-            255,
-            0
-        ],
+        "color": 123,
         "rotation": [
             false,
             false,
