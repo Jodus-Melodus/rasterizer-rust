@@ -76,11 +76,13 @@ fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, (u8, u8, u8))> {
     let mut txt = Vec::new();
 
     for t in text {
-        txt.push((
-            t.text,
-            Vector2D::from_coord(t.origin[0], t.origin[1]),
-            Into::<(u8, u8, u8)>::into(t.color),
-        ));
+        if t.draw {
+            txt.push((
+                t.text,
+                Vector2D::from_coord(t.origin[0], t.origin[1]),
+                Into::<(u8, u8, u8)>::into(t.color),
+            ));
+        }
     }
 
     txt
