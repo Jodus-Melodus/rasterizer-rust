@@ -1,0 +1,126 @@
+[
+    {
+        "name": "pyramid_bottom",
+        "points": [
+            [
+                0.0,
+                0.0,
+                -1.0
+            ],
+            [
+                1.0,
+                0.0,
+                1.0
+            ],
+            [
+                -1.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "color": [
+            0,
+            128,
+            128
+        ],
+        "rotation": [
+            false,
+            true,
+            false
+        ],
+        "draw": false
+    },
+    {
+        "name": "pyramid_side1",
+        "points": [
+            [
+                0.0,
+                2.0,
+                0.0
+            ],
+            [
+                -1.0,
+                0.0,
+                1.0
+            ],
+            [
+                1.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "color": [
+            128,
+            128,
+            0
+        ],
+        "rotation": [
+            false,
+            true,
+            false
+        ],
+        "draw": false
+    },
+    {
+        "name": "pyramid_side2",
+        "points": [
+            [
+                0.0,
+                2.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                0.0,
+                -1.0
+            ]
+        ],
+        "color": [
+            0,
+            0,
+            255
+        ],
+        "rotation": [
+            false,
+            true,
+            false
+        ],
+        "draw": false
+    },
+    {
+        "name": "pyramid_side3",
+        "points": [
+            [
+                0.0,
+                2.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                -1.0
+            ],
+            [
+                -1.0,
+                0.0,
+                1.0
+            ]
+        ],
+        "color": [
+            255,
+            0,
+            0
+        ],
+        "rotation": [
+            false,
+            true,
+            false
+        ],
+        "draw": false
+    }
+]

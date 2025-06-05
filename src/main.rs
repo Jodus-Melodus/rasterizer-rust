@@ -3,7 +3,7 @@ use minifb::{Key, Window, WindowOptions};
 use rasterizer::Image;
 use serde_json::from_reader;
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{stdin, stdout, BufReader, Result, Write},
     time::Instant,
 };
@@ -20,32 +20,53 @@ fn read_line(prompt: &str) -> String {
     input.trim().to_string()
 }
 
-fn read_render_file() -> Result<(Vec<Object>, Vec<Text>)> {
-    let object_file = File::open("objects.json")?;
+fn read_render_file() -> Result<(Vec<Vec<Object>>, Vec<Text>)> {
+    let directory_name = "objects";
+    let mut objects = Vec::new();
+
+    match fs::read_dir(directory_name) {
+        Ok(entries) => {
+            for entry in entries {
+                if let Ok(entry) = entry {
+                    let path = entry.path();
+                    if path.is_file() {
+                        let object_file = File::open(path)?;
+                        let object_reader = BufReader::new(object_file);
+                        let object: Vec<Object> = from_reader(object_reader)?;
+                        objects.push(object);
+                    }
+                }
+            }
+        }
+        Err(e) => eprintln!("Failed to read directory: {}", e),
+    }
+
     let text_file = File::open("text.json")?;
-    let object_reader = BufReader::new(object_file);
     let text_reader = BufReader::new(text_file);
-    let objects: Vec<Object> = from_reader(object_reader)?;
     let text: Vec<Text> = from_reader(text_reader)?;
     Ok((objects, text))
 }
 
 fn objects_to_points(
-    objects: Vec<Object>,
+    object_array: Vec<Vec<Object>>,
 ) -> Vec<(Vec<Vector3D>, (u8, u8, u8), (bool, bool, bool))> {
     let mut objs = Vec::new();
 
-    for object in objects {
-        let points = object
-            .points
-            .iter()
-            .map(|pts| Vector3D::from_coord(pts[0], pts[1], pts[2]))
-            .collect::<Vec<Vector3D>>();
-        objs.push((
-            points,
-            Into::<(u8, u8, u8)>::into(object.color),
-            Into::<(bool, bool, bool)>::into(object.rotation),
-        ));
+    for objects in object_array {
+        for object in objects {
+            let points = object
+                .points
+                .iter()
+                .map(|pts| Vector3D::from_coord(pts[0], pts[1], pts[2]))
+                .collect::<Vec<Vector3D>>();
+            if object.draw {
+                objs.push((
+                    points,
+                    Into::<(u8, u8, u8)>::into(object.color),
+                    Into::<(bool, bool, bool)>::into(object.rotation),
+                ));
+            }
+        }
     }
 
     objs
