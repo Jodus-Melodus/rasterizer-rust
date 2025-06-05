@@ -89,17 +89,17 @@ fn text_to_points(text: Vec<Text>) -> Vec<(String, Vector2D, u32)> {
 }
 
 fn main() -> Result<()> {
-    let width = read_line("Width: ").parse::<usize>().unwrap_or(1_280);
-    let height = read_line("Height: ").parse::<usize>().unwrap_or(640);
+    let width = read_line("Width: ").parse::<usize>().unwrap_or(1024);
+    let height = read_line("Height: ").parse::<usize>().unwrap_or(512);
     let mut focal_length = read_line("Focal Length: ").parse::<f32>().unwrap_or(200.0);
     let movement_speed = read_line("Camera Movement Speed: ")
         .parse::<f32>()
         .unwrap_or(0.1);
     let scroll_sensitivity = read_line("Scroll Sensitivity: ")
         .parse::<f32>()
-        .unwrap_or(5.0);
+        .unwrap_or(1.0);
 
-    let camera = Vector3D::from_coord(0.0, 0.0, 5.0);
+    let mut camera = Vector3D::from_coord(0.0, 0.0, 5.0);
     let start_time = Instant::now();
     let mut last_frame_time = Instant::now();
     let mut frame_count = 0;
@@ -146,7 +146,7 @@ fn main() -> Result<()> {
                 let (points, color, rotation) = object;
                 let rotated_points: Vec<_> = points
                     .iter()
-                    .map(|point| Image::rotate(*point, start_time, *rotation))
+                    .map(|point| Image::rotate_delta_time(*point, start_time, *rotation))
                     .collect();
                 let translated_points: Vec<_> = rotated_points
                     .iter()
@@ -200,6 +200,25 @@ fn main() -> Result<()> {
             2,
         );
         // println!("Fps: {:.2}", fps);
+
+        for x in -5..=5 {
+            for y in -5..=5 {
+                let point = Vector3D::from_coord(
+                    x as f32 + translate_vector.x,
+                    y as f32 + translate_vector.y,
+                    0.0 + translate_vector.z,
+                );
+                if let Some(projected_point) = img.project_3d_to_2d(point, camera, focal_length) {
+                    img.draw_point(projected_point, 0xFF0000);
+                    img.draw_text(
+                        &format!("{};{}", x, y),
+                        projected_point + Vector2D::from_coord(2.0, y as f32),
+                        0xFFFFFF,
+                        2,
+                    );
+                }
+            }
+        }
 
         window
             .update_with_buffer(&img.get_pixels(), width, height)

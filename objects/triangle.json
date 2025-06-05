@@ -18,12 +18,12 @@
                 0.0
             ]
         ],
-        "color": 123,
+        "color": 76545676,
         "rotation": [
             false,
             true,
-            true
+            false
         ],
-        "draw": false
+        "draw": true
     }
 ]

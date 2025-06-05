@@ -24,10 +24,10 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
-        "name": "boat-side0.5",
+        "name": "boat-side1",
         "points": [
             [
                 -1,
@@ -51,7 +51,7 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
         "name": "boat-side2",
@@ -78,7 +78,7 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
         "name": "boat-side3",
@@ -105,7 +105,7 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
         "name": "boat-side4",
@@ -132,7 +132,7 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
         "name": "boat-side5",
@@ -159,7 +159,7 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     },
     {
         "name": "boat-side6",
@@ -186,6 +186,6 @@
             true,
             false
         ],
-        "draw": true
+        "draw": false
     }
 ]

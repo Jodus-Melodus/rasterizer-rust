@@ -77,6 +77,8 @@ fn make_font() -> HashMap<char, [u8; 15]> {
     font.insert('y', [0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0]);
     font.insert('z', [0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1]);
     font.insert('.', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+    font.insert('-', [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]);
+    font.insert(';', [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0]);
 
     font
 }
@@ -333,7 +335,7 @@ impl Image {
         focal_length: f32,
     ) -> Option<Vector2D> {
         let dz = point.z - camera.z;
-        if dz == 0.0 {
+        if dz >= 0.0 {
             return None;
         }
         let projected_x = (point.x - camera.x) * (focal_length / dz);
@@ -385,8 +387,47 @@ impl Image {
         )
     }
 
-    pub fn rotate(point: Vector3D, delta_time: Instant, rotation: (bool, bool, bool)) -> Vector3D {
+    pub fn rotate_delta_time(
+        point: Vector3D,
+        delta_time: Instant,
+        rotation: (bool, bool, bool),
+    ) -> Vector3D {
         let angle = delta_time.elapsed().as_secs_f32() * 0.5;
+        let cos_a = angle.cos();
+        let sin_a = angle.sin();
+
+        let mut result = point;
+
+        if rotation.0 {
+            // Rotation around X axis
+            result = Vector3D::from_coord(
+                result.x,
+                result.y * cos_a - result.z * sin_a,
+                result.y * sin_a + result.z * cos_a,
+            );
+        }
+
+        if rotation.1 {
+            // Rotation around Y axis
+            result = Vector3D::from_coord(
+                result.x * cos_a + result.z * sin_a,
+                result.y,
+                -result.x * sin_a + result.z * cos_a,
+            );
+        }
+        if rotation.2 {
+            // Rotation around Z axis
+            result = Vector3D::from_coord(
+                result.x * cos_a - result.y * sin_a,
+                result.x * sin_a + result.y * cos_a,
+                result.z,
+            );
+        }
+
+        result
+    }
+
+    pub fn rotate_angle(point: Vector3D, angle: f32, rotation: (bool, bool, bool)) -> Vector3D {
         let cos_a = angle.cos();
         let sin_a = angle.sin();
 
