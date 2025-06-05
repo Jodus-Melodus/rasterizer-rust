@@ -83,9 +83,10 @@ fn make_font() -> HashMap<char, [u8; 15]> {
 
 pub struct Image {
     pixels: Vec<Vec<(u8, u8, u8)>>,
-    offset: usize,
     width: usize,
+    width_offset: usize,
     height: usize,
+    height_offset: usize,
     font: HashMap<char, [u8; 15]>,
 }
 
@@ -102,9 +103,10 @@ impl Image {
     pub fn new(width: usize, height: usize) -> Self {
         Image {
             pixels: vec![vec![(0, 0, 0); width]; height],
-            offset: width / 2,
             width,
+            width_offset: width / 2,
             height,
+            height_offset: height / 2,
             font: make_font(),
         }
     }
@@ -118,9 +120,9 @@ impl Image {
     }
 
     pub fn draw_point(&mut self, point: Vector2D, color: (u8, u8, u8)) {
-        self.pixels
-            [((point.y as isize + self.offset as isize) as usize).clamp(0, self.width - 1)]
-            [((point.x as isize + self.offset as isize) as usize).clamp(0, self.height - 1)] =
+        self.pixels[((point.y as isize + self.height_offset as isize) as usize)
+            .clamp(0, self.height - 1)]
+            [((point.x as isize + self.width_offset as isize) as usize).clamp(0, self.width - 1)] =
             color;
     }
 
@@ -331,8 +333,8 @@ impl Image {
         if !projected_x.is_finite() || !projected_y.is_finite() {
             return None;
         }
-        let screen_x = projected_x + self.offset as f32;
-        let screen_y = projected_y + self.offset as f32;
+        let screen_x = projected_x + self.width_offset as f32;
+        let screen_y = projected_y + self.height_offset as f32;
         if screen_x < 0.0
             || screen_x >= self.width as f32
             || screen_y < 0.0
@@ -343,24 +345,42 @@ impl Image {
         Some(Vector2D::from_coord(-projected_x, -projected_y))
     }
 
-    pub fn draw_text(&mut self, text: &str, coordinate: Vector2D, color: (u8, u8, u8)) {
-        let mut offset = 5.0;
+    pub fn draw_text(
+        &mut self,
+        text: &str,
+        coordinate: Vector2D,
+        color: (u8, u8, u8),
+        scale: usize,
+    ) {
+        let mut offset = 0.0;
         for letter in text.chars() {
-            let map = *self.font.get(&letter).unwrap();
-
-            for r in (0..5).rev() {
-                for c in (0..3).rev() {
+            let map = *self.font.get(&letter).unwrap_or(&[0; 15]);
+            for r in 0..5 {
+                for c in 0..3 {
                     if map[3 * r + c] == 1 {
-                        let point = Vector2D::from_coord(
-                            offset + coordinate.x + c as f32,
-                            coordinate.y - r as f32,
-                        );
-                        self.draw_point(point, color);
+                        // Draw a scale x scale block for each pixel
+                        for dy in 0..scale {
+                            for dx in 0..scale {
+                                let point = Vector2D::from_coord(
+                                    offset + (c as f32 * scale as f32) + dx as f32 + coordinate.x,
+                                    coordinate.y - (r as f32 * scale as f32) - dy as f32,
+                                );
+                                self.draw_point(point, color);
+                            }
+                        }
                     }
                 }
             }
-            offset += 5.0;
+            offset += 3.0 * scale as f32 + scale as f32;
         }
+    }
+
+    pub fn translate(point: Vector3D, translate_vector: Vector3D) -> Vector3D {
+        Vector3D::from_coord(
+            point.x + translate_vector.x,
+            point.y + translate_vector.y,
+            point.z + translate_vector.z,
+        )
     }
 
     pub fn rotate(point: Vector3D, delta_time: Instant, rotation: (bool, bool, bool)) -> Vector3D {

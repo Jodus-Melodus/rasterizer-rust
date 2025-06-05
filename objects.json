@@ -1,32 +1,212 @@
 [
     {
-        "name": "triangle",
+        "name": "boat-middle",
         "points": [
             [
-                0.0,
-                0.0,
-                0.0
+                -1,
+                0,
+                0
             ],
             [
-                0.0,
-                0.0,
-                1.0
+                1,
+                0,
+                0
             ],
             [
-                0.0,
-                1.0,
-                0.0
+                0,
+                1,
+                0
+            ]
+        ],
+        "color": [
+            204,
+            85,
+            0
+        ],
+        "rotation": [
+            false,
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side0.5",
+        "points": [
+            [
+                -1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0.5,
+                -0.5
+            ]
+        ],
+        "color": [
+            64,
+            224,
+            208
+        ],
+        "rotation": [
+            false,
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side2",
+        "points": [
+            [
+                -1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0.5,
+                0.5
             ]
         ],
         "color": [
             255,
             0,
+            255
+        ],
+        "rotation": [
+            false,
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side3",
+        "points": [
+            [
+                0,
+                0.5,
+                0.5
+            ],
+            [
+                -1,
+                0,
+                0
+            ],
+            [
+                -1.5,
+                1.5,
+                0
+            ]
+        ],
+        "color": [
+            255,
+            191,
             0
         ],
         "rotation": [
             false,
-            true,
-            false
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side4",
+        "points": [
+            [
+                0,
+                0.5,
+                0.5
+            ],
+            [
+                1,
+                0,
+                0
+            ],
+            [
+                1.5,
+                1.5,
+                0
+            ]
+        ],
+        "color": [
+            80,
+            200,
+            120
+        ],
+        "rotation": [
+            false,
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side5",
+        "points": [
+            [
+                0,
+                0.5,
+                -0.5
+            ],
+            [
+                1,
+                0,
+                0
+            ],
+            [
+                1.5,
+                1.5,
+                0
+            ]
+        ],
+        "color": [
+            65,
+            105,
+            225
+        ],
+        "rotation": [
+            false,
+            false,
+            true
+        ]
+    },
+    {
+        "name": "boat-side6",
+        "points": [
+            [
+                0,
+                0.5,
+                -0.5
+            ],
+            [
+                -1,
+                0,
+                0
+            ],
+            [
+                -1.5,
+                1.5,
+                0
+            ]
+        ],
+        "color": [
+            220,
+            20,
+            60
+        ],
+        "rotation": [
+            false,
+            false,
+            true
         ]
     }
 ]
