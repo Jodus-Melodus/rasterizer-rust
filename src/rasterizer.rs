@@ -82,7 +82,7 @@ fn make_font() -> HashMap<char, [u8; 15]> {
 }
 
 pub struct Image {
-    pixels: Vec<Vec<u32>>,
+    pixels: Vec<u32>,
     width: usize,
     width_offset: usize,
     height: usize,
@@ -91,28 +91,24 @@ pub struct Image {
 }
 
 impl Image {
-    fn rbg_to_u32(r: u8, g: u8, b: u8) -> u32 {
+    pub fn get_pixels(&self) -> Vec<u32> {
+        self.pixels.iter().rev().copied().collect()
+    }
+
+    pub fn rbg_to_u32(r: u8, g: u8, b: u8) -> u32 {
         ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
     }
 
-    fn u32_to_rgb(color: u32) -> (u8, u8, u8) {
+    pub fn u32_to_rgb(color: u32) -> (u8, u8, u8) {
         let r = ((color >> 16) & 0xFF) as u8;
         let g = ((color >> 8) & 0xFF) as u8;
         let b = (color & 0xFF) as u8;
         (r, g, b)
     }
 
-    pub fn to_u32_buffer(&self) -> Vec<u32> {
-        self.pixels
-            .iter()
-            .rev()
-            .flat_map(|row| row.iter().copied())
-            .collect()
-    }
-
     pub fn new(width: usize, height: usize) -> Self {
         Image {
-            pixels: vec![vec![0; width]; height],
+            pixels: vec![0; width * height],
             width,
             width_offset: width / 2,
             height,
@@ -122,18 +118,17 @@ impl Image {
     }
 
     pub fn clear(&mut self) {
-        for row in self.pixels.iter_mut() {
-            for pixel in row.iter_mut() {
-                *pixel = 0;
-            }
+        for i in 0..self.pixels.len() {
+            self.pixels[i] = 0;
         }
     }
 
     pub fn draw_point(&mut self, point: Vector2D, color: u32) {
-        self.pixels[((point.y as isize + self.height_offset as isize) as usize)
-            .clamp(0, self.height - 1)]
-            [((point.x as isize + self.width_offset as isize) as usize).clamp(0, self.width - 1)] =
-            color;
+        let x = ((point.x as isize + self.width_offset as isize) as usize).clamp(0, self.width - 1);
+        let y =
+            ((point.y as isize + self.height_offset as isize) as usize).clamp(0, self.height - 1);
+        let flipped_x = self.width - 1 - x;
+        self.pixels[self.width * y + flipped_x] = color;
     }
 
     fn get_max_min_coords(a: Vector2D, b: Vector2D, c: Vector2D) -> (isize, isize, isize, isize) {
@@ -147,8 +142,8 @@ impl Image {
 
     pub fn save_bmp(&self, path: &str) -> Result<()> {
         println!("Saving...");
-        let height = self.pixels.len();
-        let width = if height > 0 { self.pixels[0].len() } else { 0 };
+        let width = self.width;
+        let height = self.height;
 
         // Each row in BMP must be padded to a multiple of 4 bytes
         let row_padding = (4 - (width * 3) % 4) % 4;
@@ -178,9 +173,12 @@ impl Image {
         cursor.write_all(&[0u8; 4])?; // Important colors
 
         // === PIXEL DATA ===
-        for row in self.pixels.iter() {
-            for color in row {
-                let (r, g, b) = Self::u32_to_rgb(*color);
+        // BMP stores rows bottom-to-top
+        for y in (0..height).rev() {
+            let row_start = y * width;
+            let row_end = row_start + width;
+            for &color in &self.pixels[row_start..row_end] {
+                let (r, g, b) = Self::u32_to_rgb(color);
                 cursor.write_all(&[b, g, r])?;
             }
             // Row padding

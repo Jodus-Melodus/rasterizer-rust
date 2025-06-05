@@ -202,7 +202,7 @@ fn main() -> Result<()> {
         // println!("Fps: {:.2}", fps);
 
         window
-            .update_with_buffer(&img.to_u32_buffer(), width, height)
+            .update_with_buffer(&img.get_pixels(), width, height)
             .unwrap();
     }
 
