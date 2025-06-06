@@ -3,18 +3,17 @@ pub struct Color {
     r: u8,
     g: u8,
     b: u8,
-    a: u8,
 }
 
 impl Color {
-    pub const BLACK: Color = Color::new(0, 0, 0, 255);
+    pub const BLACK: Color = Color::new(0, 0, 0);
 
-    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Color { r, g, b, a }
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
+        Color { r, g, b }
     }
 
     pub fn to_u32(&self) -> u32 {
-        ((self.a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | self.b as u32
+        ((self.r as u32) << 16) | ((self.g as u32) << 8) | self.b as u32
     }
 }
 
@@ -24,7 +23,6 @@ impl From<(u8, u8, u8, u8)> for Color {
             r: value.0,
             g: value.1,
             b: value.2,
-            a: value.3,
         }
     }
 }
