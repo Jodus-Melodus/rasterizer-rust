@@ -16,6 +16,11 @@
                 3,
                 0,
                 -3
+            ],
+            [
+                3,
+                0,
+                3
             ]
         ],
         "color": 234,
@@ -24,33 +29,6 @@
             false,
             false
         ],
-        "draw": true
-    },
-    {
-        "name": "plane2",
-        "points": [
-            [
-                3,
-                0,
-                -3
-            ],
-            [
-                3,
-                0,
-                3
-            ],
-            [
-                -3,
-                0,
-                3
-            ]
-        ],
-        "color": 456,
-        "rotation": [
-            false,
-            false,
-            false
-        ],
-        "draw": true
+        "draw": false
     }
 ]

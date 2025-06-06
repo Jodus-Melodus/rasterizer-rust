@@ -99,7 +99,7 @@ fn main() -> Result<()> {
         .parse::<f32>()
         .unwrap_or(1.0);
 
-    let mut camera = Vector3D::from_coord(0.0, 0.0, 5.0);
+    let camera = Vector3D::from_coord(0.0, 0.0, 5.0);
     let start_time = Instant::now();
     let mut last_frame_time = Instant::now();
     let mut frame_count = 0;
@@ -169,11 +169,11 @@ fn main() -> Result<()> {
                 .map(|point| img.project_3d_to_2d(*point, camera, focal_length))
                 .collect();
 
-            for i in 1..projected_points.len() - 1 {
+            for i in 0..projected_points.len() - 2 {
                 if let (Some(p0), Some(p1), Some(p2)) = (
-                    projected_points[0],
                     projected_points[i],
                     projected_points[i + 1],
+                    projected_points[i + 2],
                 ) {
                     img.draw_triangle2(p0, p1, p2, *color);
                 }
@@ -190,35 +190,16 @@ fn main() -> Result<()> {
         last_frame_time = Instant::now();
         frame_count += 1;
         let fps = 1.0 / frame_time;
-        img.draw_text(
-            &format!("Fps: {:.2}", fps),
-            Vector2D::from_coord(
-                (width as isize / -2) as f32 + 5.0,
-                (height as isize / 2) as f32 - 5.0,
-            ),
-            u32::MAX,
-            2,
-        );
-        // println!("Fps: {:.2}", fps);
-
-        for x in -5..=5 {
-            for y in -5..=5 {
-                let point = Vector3D::from_coord(
-                    x as f32 + translate_vector.x,
-                    y as f32 + translate_vector.y,
-                    0.0 + translate_vector.z,
-                );
-                if let Some(projected_point) = img.project_3d_to_2d(point, camera, focal_length) {
-                    img.draw_point(projected_point, 0xFF0000);
-                    img.draw_text(
-                        &format!("{};{}", x, y),
-                        projected_point + Vector2D::from_coord(2.0, y as f32),
-                        0xFFFFFF,
-                        2,
-                    );
-                }
-            }
-        }
+        // img.draw_text(
+        //     &format!("Fps: {:.2}", fps),
+        //     Vector2D::from_coord(
+        //         (width as isize / -2) as f32 + 5.0,
+        //         (height as isize / 2) as f32 - 5.0,
+        //     ),
+        //     u32::MAX,
+        //     2,
+        // );
+        println!("Fps: {:.2}", fps);
 
         window
             .update_with_buffer(&img.get_pixels(), width, height)
