@@ -4,11 +4,10 @@ use std::{
     io::{stdin, stdout, Write},
     time::Instant,
 };
-use vector_2d_3d::Vector2D;
 
 use crate::render::{
     rasterizer::Screen,
-    types::{Color, FrameBufferSize},
+    types::{Color, FrameBufferSize, Vector2},
 };
 
 mod render;
@@ -31,18 +30,19 @@ fn main() {
     let mut frame_count = 0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let scale = random_range(1..10);
         let triangle_points = [
-            Vector2D::from_coord(
-                random_range(-100..=100) as f32,
-                random_range(-100..=100) as f32,
+            Vector2::new(
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
             ),
-            Vector2D::from_coord(
-                random_range(-100..=100) as f32,
-                random_range(-100..=100) as f32,
+            Vector2::new(
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
             ),
-            Vector2D::from_coord(
-                random_range(-100..=100) as f32,
-                random_range(-100..=100) as f32,
+            Vector2::new(
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
+                random_range(-(100 * scale)..=(100 * scale)) as isize,
             ),
         ];
         screen.clear();

@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 #[derive(Clone, Copy)]
 pub struct Color {
     r: u8,
@@ -36,5 +38,24 @@ pub struct FrameBufferSize {
 impl FrameBufferSize {
     pub fn new(width: usize, height: usize) -> Self {
         FrameBufferSize { width, height }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Vector2 {
+    pub x: isize,
+    pub y: isize,
+}
+
+impl Vector2 {
+    pub fn new(x: isize, y: isize) -> Self {
+        Vector2 { x, y }
+    }
+}
+
+impl Add for Vector2 {
+    type Output = Vector2;
+    fn add(self, rhs: Self) -> Self::Output {
+        Vector2::new(self.x + rhs.x, self.y + rhs.y)
     }
 }

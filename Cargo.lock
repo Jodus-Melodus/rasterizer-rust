@@ -448,7 +448,6 @@ dependencies = [
  "minifb",
  "rand",
  "rayon",
- "vector_2d_3d",
 ]
 
 [[package]]
@@ -622,16 +621,6 @@ name = "unicode-ident"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
-
-[[package]]
-name = "vector_2d_3d"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fa0a500da02b7c0ef50df24cd5d657571232258b6cf3be7e030ba786fbb79b7"
-dependencies = [
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "version-compare"
