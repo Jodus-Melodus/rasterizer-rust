@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::render::types::{Color, FrameBufferSize, Vector2};
+use crate::render::types::{Color, FrameBufferSize, Vector2, Vector3};
 
 pub struct Screen {
     frame_buffer: Vec<u32>,
@@ -23,7 +23,7 @@ impl Screen {
         self.frame_buffer = vec![0; self.frame_buffer_size.width * self.frame_buffer_size.height];
     }
 
-    fn draw_point(&mut self, point: Vector2, color: Color) {
+    pub fn draw_point(&mut self, point: Vector2, color: Color) {
         let offset = Vector2::new(
             (self.frame_buffer_size.width / 2) as isize,
             (self.frame_buffer_size.height / 2) as isize,
@@ -34,6 +34,24 @@ impl Screen {
             (self.frame_buffer_size.width as isize * offset_point.y + offset_point.x) as usize;
 
         self.frame_buffer[index] = color.to_u32();
+    }
+
+    pub fn project(&self, point: Vector3, camera: Vector3, fov: f32) -> Vector2 {
+        let rel = Vector3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
+
+        if rel.z <= 0 {
+            return Vector2::new(0, 0);
+        }
+
+        let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
+        let f = 1.0 / (fov / 2.0).tan();
+        let x_ndc = (rel.x as f32 * f / aspect) / rel.z as f32;
+        let y_ndc = (rel.y as f32 * f) / rel.z as f32;
+
+        Vector2::new(
+            (x_ndc * (self.frame_buffer_size.width as f32 / 2.0)) as isize,
+            (y_ndc * (self.frame_buffer_size.height as f32 / 2.0)) as isize,
+        )
     }
 
     pub fn draw_triangle(&mut self, triangle_points: [Vector2; 3], color: Color) {
@@ -82,7 +100,7 @@ impl Screen {
                     let w1 = e1.0 * x + e1.1 * y + e1.2;
                     let w2 = e2.0 * x + e2.1 * y + e2.2;
 
-                    if w0 >= 0 && w1 >= 0 && w2 >= 0 {
+                    if (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0) {
                         let offset_point = point + offset;
                         let ix = offset_point.x as isize;
                         let iy = offset_point.y as isize;

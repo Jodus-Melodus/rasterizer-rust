@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 #[derive(Clone, Copy)]
 pub struct Color {
@@ -9,6 +9,9 @@ pub struct Color {
 
 impl Color {
     pub const BLACK: Color = Color::new(0, 0, 0);
+    pub const RED: Color = Color::new(255, 0, 0);
+    pub const GREEN: Color = Color::new(0, 255, 0);
+    pub const BLUE: Color = Color::new(0, 0, 255);
 
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Color { r, g, b }
@@ -41,7 +44,7 @@ impl FrameBufferSize {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vector2 {
     pub x: isize,
     pub y: isize,
@@ -57,5 +60,39 @@ impl Add for Vector2 {
     type Output = Vector2;
     fn add(self, rhs: Self) -> Self::Output {
         Vector2::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl Mul<isize> for Vector2 {
+    type Output = Vector2;
+    fn mul(self, rhs: isize) -> Self::Output {
+        Vector2::new(self.x * rhs, self.y * rhs)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Vector3 {
+    pub x: isize,
+    pub y: isize,
+    pub z: isize,
+}
+
+impl Vector3 {
+    pub fn new(x: isize, y: isize, z: isize) -> Self {
+        Vector3 { x, y, z }
+    }
+}
+
+impl Add for Vector3 {
+    type Output = Vector3;
+    fn add(self, rhs: Self) -> Self::Output {
+        Vector3::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl Mul<isize> for Vector3 {
+    type Output = Vector3;
+    fn mul(self, rhs: isize) -> Self::Output {
+        Vector3::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
