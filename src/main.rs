@@ -25,7 +25,6 @@ fn main() {
     let frame_buffer_size = FrameBufferSize::new(width, height);
     let mut screen = Screen::new(frame_buffer_size);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
-    let start_time = Instant::now();
     let mut frame_count = 0;
     let camera = Camera::new(Vector3::new(0, 0, -10), 90.0_f32.to_radians());
     let triangle = [
@@ -33,6 +32,7 @@ fn main() {
         Vector3::new(2, -2, 2),
         Vector3::new(-2, 2, 1),
     ];
+    let start_time = Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let pressed_keys = window.get_keys_pressed(KeyRepeat::Yes);
