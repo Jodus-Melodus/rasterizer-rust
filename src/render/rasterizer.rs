@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::render::types::{Color, FrameBufferSize, Vector2, Vector3};
+use crate::render::types::{Camera, Color, FrameBufferSize, Vector2, Vector3};
 
 pub struct Screen {
     frame_buffer: Vec<u32>,
@@ -36,7 +36,7 @@ impl Screen {
         self.frame_buffer[index] = color.to_u32();
     }
 
-    pub fn project(&self, point: Vector3, camera: Vector3, fov: f32) -> Vector2 {
+    pub fn project(&self, point: Vector3, camera: Camera) -> Vector2 {
         let rel = Vector3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
 
         if rel.z <= 0 {
@@ -44,7 +44,7 @@ impl Screen {
         }
 
         let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
-        let f = 1.0 / (fov / 2.0).tan();
+        let f = 1.0 / (camera.fov / 2.0).tan();
         let x_ndc = (rel.x as f32 * f / aspect) / rel.z as f32;
         let y_ndc = (rel.y as f32 * f) / rel.z as f32;
 

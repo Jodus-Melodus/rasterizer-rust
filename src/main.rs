@@ -1,5 +1,4 @@
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use rand::random_range;
 use std::{
     io::{stdin, stdout, Write},
     time::Instant,
@@ -7,7 +6,7 @@ use std::{
 
 use crate::render::{
     rasterizer::Screen,
-    types::{Color, FrameBufferSize, Vector2, Vector3},
+    types::{Camera, Color, FrameBufferSize, Vector2, Vector3},
 };
 
 mod render;
@@ -28,8 +27,7 @@ fn main() {
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
     let start_time = Instant::now();
     let mut frame_count = 0;
-    let camera = Vector3::new(0, 0, -10);
-    let fov = 90.0_f32.to_radians();
+    let camera = Camera::new(Vector3::new(0, 0, -10), 90.0_f32.to_radians());
     let triangle = [
         Vector3::new(2, 0, 3),
         Vector3::new(2, -2, 2),
@@ -49,8 +47,7 @@ fn main() {
         }
 
         screen.clear();
-        let projected_points: [Vector2; 3] =
-            triangle.map(|point| screen.project(point, camera, fov));
+        let projected_points: [Vector2; 3] = triangle.map(|point| screen.project(point, camera));
         screen.draw_triangle(projected_points, Color::BLUE);
         screen.draw_point(Vector2::new(0, 0), Color::RED);
 

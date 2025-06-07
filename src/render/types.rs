@@ -96,3 +96,22 @@ impl Mul<isize> for Vector3 {
         Vector3::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct Camera {
+    pub x: isize,
+    pub y: isize,
+    pub z: isize,
+    pub fov: f32,
+}
+
+impl Camera {
+    pub fn new(position: Vector3, fov: f32) -> Self {
+        Camera {
+            x: position.x,
+            y: position.y,
+            z: position.z,
+            fov,
+        }
+    }
+}
