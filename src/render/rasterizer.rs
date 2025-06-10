@@ -25,22 +25,22 @@ impl Screen {
 
     pub fn draw_point(&mut self, point: Vector2, color: Color) {
         let offset = Vector2::new(
-            (self.frame_buffer_size.width / 2) as isize,
-            (self.frame_buffer_size.height / 2) as isize,
+            (self.frame_buffer_size.width / 2) as f32,
+            (self.frame_buffer_size.height / 2) as f32,
         );
 
         let offset_point = point + offset;
-        let index =
-            (self.frame_buffer_size.width as isize * offset_point.y + offset_point.x) as usize;
+        let index = (self.frame_buffer_size.width as isize * (offset_point.y as isize)
+            + (offset_point.x as isize)) as usize;
 
         self.frame_buffer[index] = color.to_u32();
     }
 
-    pub fn project(&self, point: Vector3, camera: Camera) -> Vector2 {
+    pub fn project(&self, point: Vector3, camera: Camera) -> (Vector2, f32) {
         let rel = Vector3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
 
-        if rel.z <= 0 {
-            return Vector2::new(0, 0);
+        if rel.z <= 0.0 {
+            return (Vector2::new(0.0, 0.0), 0.0);
         }
 
         let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
@@ -48,39 +48,51 @@ impl Screen {
         let x_ndc = (rel.x as f32 * f / aspect) / rel.z as f32;
         let y_ndc = (rel.y as f32 * f) / rel.z as f32;
 
-        Vector2::new(
-            (x_ndc * (self.frame_buffer_size.width as f32 / 2.0)) as isize,
-            (y_ndc * (self.frame_buffer_size.height as f32 / 2.0)) as isize,
+        (
+            Vector2::new(
+                x_ndc * (self.frame_buffer_size.width as f32 / 2.0),
+                y_ndc * (self.frame_buffer_size.height as f32 / 2.0),
+            ),
+            point.z / rel.z,
         )
     }
 
-    pub fn draw_triangle(&mut self, triangle_points: [Vector2; 3], color: Color) {
+    pub fn project_triangle(&self, triangle: [Vector3; 3], camera: Camera) -> [(Vector2, f32); 3] {
+        [
+            self.project(triangle[0], camera),
+            self.project(triangle[1], camera),
+            self.project(triangle[2], camera),
+        ]
+    }
+
+    pub fn draw_triangle(&mut self, triangle_points: [(Vector2, f32); 3], color: Color) {
         let width = self.frame_buffer_size.width as isize;
         let height = self.frame_buffer_size.height as isize;
         let offset = Vector2::new(
-            (self.frame_buffer_size.width / 2) as isize,
-            (self.frame_buffer_size.height / 2) as isize,
+            (self.frame_buffer_size.width / 2) as f32,
+            (self.frame_buffer_size.height / 2) as f32,
         );
+        let triangle_points = triangle_points.iter().map(|(v, _)| v).collect::<Vec<_>>();
         let min_x = triangle_points
             .iter()
             .map(|v| v.x)
-            .fold(isize::MAX, isize::min)
-            .clamp(-offset.x, offset.x);
+            .fold(f32::MAX, f32::min)
+            .clamp(-offset.x, offset.x) as isize;
         let max_x = triangle_points
             .iter()
             .map(|v| v.x)
-            .fold(isize::MIN, isize::max)
-            .clamp(-offset.x, offset.x);
+            .fold(f32::MIN, f32::max)
+            .clamp(-offset.x, offset.x) as isize;
         let min_y = triangle_points
             .iter()
             .map(|v| v.y)
-            .fold(isize::MAX, isize::min)
-            .clamp(-offset.y, offset.y);
+            .fold(f32::MAX, f32::min)
+            .clamp(-offset.y, offset.y) as isize;
         let max_y = triangle_points
             .iter()
             .map(|v| v.y)
-            .fold(isize::MIN, isize::max)
-            .clamp(-offset.y, offset.y);
+            .fold(f32::MIN, f32::max)
+            .clamp(-offset.y, offset.y) as isize;
 
         let a = &triangle_points[0];
         let b = &triangle_points[1];
@@ -95,12 +107,14 @@ impl Screen {
             .flat_map_iter(|y| {
                 let mut writes = Vec::new();
                 for x in min_x..=max_x {
-                    let point = Vector2::new(x, y);
-                    let w0 = e0.0 * x + e0.1 * y + e0.2;
-                    let w1 = e1.0 * x + e1.1 * y + e1.2;
-                    let w2 = e2.0 * x + e2.1 * y + e2.2;
+                    let point = Vector2::new(x as f32, y as f32);
+                    let w0 = e0.0 * x as f32 + e0.1 * y as f32 + e0.2;
+                    let w1 = e1.0 * x as f32 + e1.1 * y as f32 + e1.2;
+                    let w2 = e2.0 * x as f32 + e2.1 * y as f32 + e2.2;
 
-                    if (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0) {
+                    if (w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0)
+                        || (w0 <= 0.0 && w1 <= 0.0 && w2 <= 0.0)
+                    {
                         let offset_point = point + offset;
                         let ix = offset_point.x as isize;
                         let iy = offset_point.y as isize;
