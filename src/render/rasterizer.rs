@@ -1,6 +1,9 @@
 use rayon::prelude::*;
 
-use crate::render::types::{Camera, Color, FrameBufferSize, Vector2, Vector3};
+use crate::render::types::{
+    x_rotation_matrix, y_rotation_matrix, z_rotation_matrix, Camera, Color, FrameBufferSize, Mesh,
+    Vector2, Vector3,
+};
 
 pub struct Screen {
     frame_buffer: Vec<u32>,
@@ -23,20 +26,7 @@ impl Screen {
         self.frame_buffer = vec![0; self.frame_buffer_size.width * self.frame_buffer_size.height];
     }
 
-    pub fn draw_point(&mut self, point: Vector2, color: Color) {
-        let offset = Vector2::new(
-            (self.frame_buffer_size.width / 2) as f32,
-            (self.frame_buffer_size.height / 2) as f32,
-        );
-
-        let offset_point = point + offset;
-        let index = (self.frame_buffer_size.width as isize * (offset_point.y as isize)
-            + (offset_point.x as isize)) as usize;
-
-        self.frame_buffer[index] = color.to_u32();
-    }
-
-    pub fn project(&self, point: Vector3, camera: Camera) -> (Vector2, f32) {
+    fn project(&self, point: Vector3, camera: Camera) -> (Vector2, f32) {
         let rel = Vector3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
 
         if rel.z <= 0.0 {
@@ -57,7 +47,7 @@ impl Screen {
         )
     }
 
-    pub fn project_triangle(&self, triangle: [Vector3; 3], camera: Camera) -> [(Vector2, f32); 3] {
+    fn project_triangle(&self, triangle: [Vector3; 3], camera: Camera) -> [(Vector2, f32); 3] {
         [
             self.project(triangle[0], camera),
             self.project(triangle[1], camera),
@@ -65,7 +55,7 @@ impl Screen {
         ]
     }
 
-    pub fn draw_triangle(&mut self, triangle_points: [(Vector2, f32); 3], color: Color) {
+    fn draw_triangle(&mut self, triangle_points: [(Vector2, f32); 3], color: Color) {
         let width = self.frame_buffer_size.width as isize;
         let height = self.frame_buffer_size.height as isize;
         let offset = Vector2::new(
@@ -130,6 +120,48 @@ impl Screen {
 
         for (index, value) in pixel_writes {
             self.frame_buffer[index] = value;
+        }
+    }
+
+    pub fn draw_shape(&mut self, shape: Mesh, theta: f32, camera: Camera) {
+        let vertices = shape.vertices;
+        let edges = shape.vertex_indices;
+        let x_rotation_matrix = x_rotation_matrix(theta);
+        let y_rotation_matrix = y_rotation_matrix(theta);
+        let z_rotation_matrix = z_rotation_matrix(theta);
+
+        let rotated_points = vertices
+            .iter()
+            .map(|v| *v * x_rotation_matrix * y_rotation_matrix * z_rotation_matrix)
+            .collect::<Vec<_>>();
+
+        let triangles = edges
+            .iter()
+            .map(|(i1, i2, i3)| {
+                [
+                    rotated_points[*i1].clone(),
+                    rotated_points[*i2].clone(),
+                    rotated_points[*i3].clone(),
+                ]
+                .clone()
+            })
+            .collect::<Vec<_>>();
+
+        let mut projected_triangles = triangles
+            .iter()
+            .map(|triangle| self.project_triangle(*triangle, camera))
+            .collect::<Vec<_>>();
+
+        projected_triangles.sort_by(|a, b| {
+            let avg_a = (a[0].1 + a[1].1 + a[2].1) / 3.0;
+            let avg_b = (b[0].1 + b[1].1 + b[2].1) / 3.0;
+            avg_a
+                .partial_cmp(&avg_b)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        for triangle in projected_triangles.iter().rev() {
+            self.draw_triangle(*triangle, Color::random());
         }
     }
 }
