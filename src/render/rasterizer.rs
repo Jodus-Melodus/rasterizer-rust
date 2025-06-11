@@ -1,6 +1,9 @@
 use rayon::prelude::*;
 
-use crate::render::types::{Camera, Color, FrameBufferSize, M3x3, Mesh, Vertex2, Vertex3};
+use crate::render::{
+    model::{Mesh, Model, TextureCoordinate2, TextureMap},
+    types::{barycentric, Camera, Color, FrameBufferSize, M3x3, Vertex2, Vertex3},
+};
 
 pub struct Screen {
     frame_buffer: Vec<u32>,
@@ -52,14 +55,19 @@ impl Screen {
         ]
     }
 
-    fn draw_triangle(&mut self, triangle_points: [(Vertex2, f32); 3], color: Color) {
+    fn draw_triangle(
+        &mut self,
+        triangle: ([(Vertex2, f32); 3], &[TextureCoordinate2; 3]),
+        texture_map: &TextureMap,
+    ) {
         let width = self.frame_buffer_size.width as isize;
         let height = self.frame_buffer_size.height as isize;
         let offset = Vertex2::new(
             (self.frame_buffer_size.width / 2) as f32,
             (self.frame_buffer_size.height / 2) as f32,
         );
-        let triangle_points = triangle_points.iter().map(|(v, _)| v).collect::<Vec<_>>();
+        let triangle_points = triangle.0.iter().map(|(v, _)| v).collect::<Vec<_>>();
+        let texture_coords = triangle.1;
         let min_x = triangle_points
             .iter()
             .map(|v| v.x)
@@ -81,13 +89,12 @@ impl Screen {
             .fold(f32::MIN, f32::max)
             .clamp(-offset.y, offset.y) as isize;
 
-        let a = &triangle_points[0];
-        let b = &triangle_points[1];
-        let c = &triangle_points[2];
+        let a = triangle_points[0].clone();
+        let b = triangle_points[1].clone();
+        let c = triangle_points[2].clone();
         let e0 = (b.y - a.y, a.x - b.x, b.x * a.y - a.x * b.y);
         let e1 = (c.y - b.y, b.x - c.x, c.x * b.y - b.x * c.y);
         let e2 = (a.y - c.y, c.x - a.x, a.x * c.y - c.x * a.y);
-        let color = color.to_u32();
 
         let pixel_writes: Vec<(usize, u32)> = (min_y..=max_y)
             .into_par_iter()
@@ -107,6 +114,11 @@ impl Screen {
                         let iy = offset_point.y as isize;
                         if ix >= 0 && iy >= 0 && ix < width && iy < height {
                             let index = (width * iy + ix) as usize;
+                            let (u, v, w) = barycentric(a, b, c, point);
+                            let tex_coord = texture_coords[0] * u
+                                + texture_coords[1] * v
+                                + texture_coords[2] * w;
+                            let color = texture_map.get_pixel(tex_coord).map_or(0, |c| c.to_u32());
                             writes.push((index, color));
                         }
                     }
@@ -115,14 +127,16 @@ impl Screen {
             })
             .collect();
 
-        for (index, value) in pixel_writes {
-            self.frame_buffer[index] = value;
+        for (index, color) in pixel_writes {
+            self.frame_buffer[index] = color;
         }
     }
 
-    pub fn draw_shape(&mut self, shape: Mesh, theta: f32, camera: Camera) {
-        let vertices = shape.vertices;
-        let edges = shape.vertex_indices;
+    pub fn draw_shape(&mut self, shape: Model, theta: f32, camera: Camera) {
+        let vertices = shape.mesh.vertices;
+        let edges = shape.mesh.vertex_indices;
+        let texture_coordinates = shape.mesh.texture_coordinates;
+        let texture_coordinate_indices = shape.mesh.texture_coordinate_indices;
         let x_rotation_matrix = M3x3::x_rotation_matrix(theta);
         let y_rotation_matrix = M3x3::y_rotation_matrix(theta);
         let z_rotation_matrix = M3x3::z_rotation_matrix(theta);
@@ -132,33 +146,44 @@ impl Screen {
             .map(|v| *v * x_rotation_matrix * y_rotation_matrix * z_rotation_matrix)
             .collect::<Vec<_>>();
 
-        let triangles = edges
-            .iter()
-            .map(|(i1, i2, i3)| {
+        let mut triangles = Vec::new();
+
+        for i in 0..edges.len() {
+            let (i1, i2, i3) = edges[i];
+            let (vt1, vt2, vt3) = texture_coordinate_indices[i];
+
+            triangles.push((
+                [rotated_points[i1], rotated_points[i2], rotated_points[i3]],
                 [
-                    rotated_points[*i1].clone(),
-                    rotated_points[*i2].clone(),
-                    rotated_points[*i3].clone(),
-                ]
-                .clone()
-            })
-            .collect::<Vec<_>>();
+                    texture_coordinates[vt1],
+                    texture_coordinates[vt2],
+                    texture_coordinates[vt3],
+                ],
+            ));
+        }
 
         let mut projected_triangles = triangles
             .iter()
-            .map(|triangle| self.project_triangle(*triangle, camera))
+            .map(|(triangle, texture_coordinates)| {
+                (
+                    self.project_triangle(*triangle, camera),
+                    texture_coordinates,
+                )
+            })
             .collect::<Vec<_>>();
 
         projected_triangles.sort_by(|a, b| {
-            let avg_a = (a[0].1 + a[1].1 + a[2].1) / 3.0;
-            let avg_b = (b[0].1 + b[1].1 + b[2].1) / 3.0;
+            let avg_a = (a.0[0].1 + a.0[1].1 + a.0[2].1) / 3.0;
+            let avg_b = (b.0[0].1 + b.0[1].1 + b.0[2].1) / 3.0;
             avg_a
                 .partial_cmp(&avg_b)
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        for triangle in projected_triangles.iter().rev() {
-            self.draw_triangle(*triangle, Color::random());
+        if let Some(ref texture_map) = shape.texture_map {
+            for triangle in projected_triangles.iter().rev() {
+                self.draw_triangle(*triangle, texture_map);
+            }
         }
     }
 }
