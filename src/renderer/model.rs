@@ -1,13 +1,15 @@
-use image::GenericImageView;
-use image::ImageReader;
-use std::ops::Add;
-use std::ops::Mul;
+use image::{GenericImageView, ImageReader};
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Result},
+    io::{BufRead, BufReader, Error, ErrorKind, Result},
 };
 
-use crate::render::types::{Color, Vertex3};
+use crate::renderer::types::{
+    vertices::{Vertex2, Vertex3},
+    Color,
+};
+
+pub type TextureCoordinate = Vertex2;
 
 #[derive(Clone)]
 pub struct Model {
@@ -28,8 +30,8 @@ impl Model {
         }
     }
 
-    pub fn load_from_file(path: &str, texture_path: Option<&str>) -> Result<Self> {
-        let mesh = Mesh::load_from_file(path)?;
+    pub fn load_from_file(object_path: &str, texture_path: Option<&str>) -> Result<Self> {
+        let mesh = Mesh::load_from_file(object_path)?;
         let texture_map = if let Some(texture_path) = texture_path {
             TextureMap::load_from_file(texture_path).ok()
         } else {
@@ -56,9 +58,10 @@ impl TextureMap {
     }
 
     pub fn load_from_file(path: &str) -> Result<Self> {
+        // Read image data
         let img = ImageReader::open(path)?
             .decode()
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            .map_err(|e| Error::new(ErrorKind::Other, e))?;
         let (width, height) = img.dimensions();
         let data = img.to_rgba8().into_raw();
         Ok(TextureMap {
@@ -68,10 +71,10 @@ impl TextureMap {
         })
     }
 
-    pub fn get_pixel(&self, texture_coordinate: TextureCoordinate2) -> Option<Color> {
+    pub fn get_pixel(&self, texture_coordinate: TextureCoordinate) -> Option<Color> {
         // Clamp UVs to [0, 1]
-        let u = texture_coordinate.u.clamp(0.0, 1.0);
-        let v = texture_coordinate.v.clamp(0.0, 1.0);
+        let u = texture_coordinate.x.clamp(0.0, 1.0);
+        let v = texture_coordinate.y.clamp(0.0, 1.0);
         // Convert to pixel coordinates
         let x = (u * (self.width as f32 - 1.0)).round() as usize;
         // Flip v for image coordinate system
@@ -93,10 +96,11 @@ impl TextureMap {
 #[derive(Clone)]
 pub struct Mesh {
     pub vertices: Vec<Vertex3>,
+    pub texture_coordinates: Vec<TextureCoordinate>,
+    pub vertex_normals: Vec<Vertex3>,
     pub vertex_indices: Vec<(usize, usize, usize)>,
     pub texture_coordinate_indices: Vec<(usize, usize, usize)>,
     pub vertex_normal_indices: Vec<(usize, usize, usize)>,
-    pub texture_coordinates: Vec<TextureCoordinate2>,
 }
 
 impl Mesh {
@@ -105,7 +109,8 @@ impl Mesh {
         vertex_indices: Vec<(usize, usize, usize)>,
         texture_coordinate_indices: Vec<(usize, usize, usize)>,
         vertex_normal_indices: Vec<(usize, usize, usize)>,
-        texture_coordinates: Vec<TextureCoordinate2>,
+        texture_coordinates: Vec<TextureCoordinate>,
+        vertex_normals: Vec<Vertex3>,
     ) -> Self {
         Mesh {
             vertices,
@@ -113,6 +118,7 @@ impl Mesh {
             texture_coordinate_indices,
             vertex_normal_indices,
             texture_coordinates,
+            vertex_normals,
         }
     }
 
@@ -124,6 +130,7 @@ impl Mesh {
         let mut texture_coordinate_indices = Vec::new();
         let mut vertex_normal_indices = Vec::new();
         let mut texture_coordinates = Vec::new();
+        let mut vertex_normals = Vec::new();
 
         for line in reader.lines() {
             let line = line?;
@@ -191,9 +198,17 @@ impl Mesh {
                     "vt" => {
                         let coords: Vec<f32> = parts.map(|p| p.parse().unwrap()).collect();
                         if coords.len() == 2 {
-                            texture_coordinates.push(TextureCoordinate2::new(coords[0], coords[1]));
+                            texture_coordinates.push(TextureCoordinate::new(coords[0], coords[1]));
                         } else {
                             eprintln!("Unknown texture coordinate syntax: {}", line);
+                        }
+                    }
+                    "vn" => {
+                        let normal: Vec<f32> = parts.map(|p| p.parse().unwrap()).collect();
+                        if normal.len() == 3 {
+                            vertex_normals.push(Vertex3::new(normal[0], normal[1], normal[2]));
+                        } else {
+                            eprintln!("Unknown vertex syntax: {}", line);
                         }
                     }
                     _ => {}
@@ -207,32 +222,7 @@ impl Mesh {
             texture_coordinate_indices,
             vertex_normal_indices,
             texture_coordinates,
+            vertex_normals,
         ))
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct TextureCoordinate2 {
-    pub u: f32,
-    pub v: f32,
-}
-
-impl TextureCoordinate2 {
-    pub fn new(u: f32, v: f32) -> Self {
-        TextureCoordinate2 { u, v }
-    }
-}
-
-impl Add for TextureCoordinate2 {
-    type Output = TextureCoordinate2;
-    fn add(self, rhs: Self) -> Self::Output {
-        TextureCoordinate2::new(self.u + rhs.u, self.v + rhs.v)
-    }
-}
-
-impl Mul<f32> for TextureCoordinate2 {
-    type Output = TextureCoordinate2;
-    fn mul(self, rhs: f32) -> Self::Output {
-        TextureCoordinate2::new(self.u * rhs, self.v * rhs)
     }
 }

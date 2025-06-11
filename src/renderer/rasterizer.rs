@@ -1,8 +1,12 @@
 use rayon::prelude::*;
 
-use crate::render::{
-    model::{Mesh, Model, TextureCoordinate2, TextureMap},
-    types::{barycentric, Camera, Color, FrameBufferSize, M3x3, Vertex2, Vertex3},
+use crate::renderer::{
+    model::{Model, TextureCoordinate, TextureMap},
+    types::{
+        matrices::M3x3,
+        vertices::{barycentric, Vertex2, Vertex3},
+        Camera, Color, FrameBufferSize,
+    },
 };
 
 pub struct Screen {
@@ -57,7 +61,7 @@ impl Screen {
 
     fn draw_triangle(
         &mut self,
-        triangle: ([(Vertex2, f32); 3], &[TextureCoordinate2; 3]),
+        triangle: ([(Vertex2, f32); 3], &[TextureCoordinate; 3]),
         texture_map: &TextureMap,
     ) {
         let width = self.frame_buffer_size.width as isize;
@@ -68,6 +72,7 @@ impl Screen {
         );
         let triangle_points = triangle.0.iter().map(|(v, _)| v).collect::<Vec<_>>();
         let texture_coords = triangle.1;
+        // create bounding box for triangle
         let min_x = triangle_points
             .iter()
             .map(|v| v.x)
@@ -115,10 +120,12 @@ impl Screen {
                         if ix >= 0 && iy >= 0 && ix < width && iy < height {
                             let index = (width * iy + ix) as usize;
                             let (u, v, w) = barycentric(a, b, c, point);
-                            let tex_coord = texture_coords[0] * u
+                            let texture_coordinate = texture_coords[0] * u
                                 + texture_coords[1] * v
                                 + texture_coords[2] * w;
-                            let color = texture_map.get_pixel(tex_coord).map_or(0, |c| c.to_u32());
+                            let color = texture_map
+                                .get_pixel(texture_coordinate)
+                                .map_or(Color::random().to_u32(), |c| c.to_u32());
                             writes.push((index, color));
                         }
                     }
@@ -134,9 +141,11 @@ impl Screen {
 
     pub fn draw_shape(&mut self, shape: Model, theta: f32, camera: Camera) {
         let vertices = shape.mesh.vertices;
-        let edges = shape.mesh.vertex_indices;
+        let vertex_indices = shape.mesh.vertex_indices; // edges
         let texture_coordinates = shape.mesh.texture_coordinates;
         let texture_coordinate_indices = shape.mesh.texture_coordinate_indices;
+        let vertex_normal_indices = shape.mesh.vertex_normal_indices;
+        let vertex_normals = shape.mesh.vertex_normals;
         let x_rotation_matrix = M3x3::x_rotation_matrix(theta);
         let y_rotation_matrix = M3x3::y_rotation_matrix(theta);
         let z_rotation_matrix = M3x3::z_rotation_matrix(theta);
@@ -148,12 +157,13 @@ impl Screen {
 
         let mut triangles = Vec::new();
 
-        for i in 0..edges.len() {
-            let (i1, i2, i3) = edges[i];
+        for i in 0..vertex_indices.len() {
+            let (v1, v2, v3) = vertex_indices[i];
             let (vt1, vt2, vt3) = texture_coordinate_indices[i];
+            let (vn1, vn2, vn3) = vertex_normal_indices[i];
 
             triangles.push((
-                [rotated_points[i1], rotated_points[i2], rotated_points[i3]],
+                [rotated_points[v1], rotated_points[v2], rotated_points[v3]],
                 [
                     texture_coordinates[vt1],
                     texture_coordinates[vt2],
@@ -162,6 +172,7 @@ impl Screen {
             ));
         }
 
+        // project triangles
         let mut projected_triangles = triangles
             .iter()
             .map(|(triangle, texture_coordinates)| {
@@ -172,6 +183,7 @@ impl Screen {
             })
             .collect::<Vec<_>>();
 
+        // z buffering
         projected_triangles.sort_by(|a, b| {
             let avg_a = (a.0[0].1 + a.0[1].1 + a.0[2].1) / 3.0;
             let avg_b = (b.0[0].1 + b.0[1].1 + b.0[2].1) / 3.0;
@@ -180,6 +192,7 @@ impl Screen {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
+        // draw triangles
         if let Some(ref texture_map) = shape.texture_map {
             for triangle in projected_triangles.iter().rev() {
                 self.draw_triangle(*triangle, texture_map);

@@ -4,13 +4,13 @@ use std::{
     time::Instant,
 };
 
-use crate::render::{
+use crate::renderer::{
     model::Model,
     rasterizer::Screen,
-    types::{Camera, FrameBufferSize, Vertex3},
+    types::{vertices::Vertex3, Camera, FrameBufferSize},
 };
 
-mod render;
+mod renderer;
 
 fn read_line(prompt: &str) -> String {
     let mut input = String::new();
