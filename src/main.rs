@@ -31,44 +31,7 @@ fn main() -> Result<()> {
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
     let mut frame_count = 0;
     let mut camera = Camera::new(Vector3::new(0.0, 0.0, -2.0), 90.0_f32.to_radians());
-
-    // let shape = (
-    //     vec![
-    //         (1.0, 1.0, 1.0),
-    //         (1.0, 1.0, -1.0),
-    //         (1.0, -1.0, 1.0),
-    //         (1.0, -1.0, -1.0),
-    //         (-1.0, 1.0, 1.0),
-    //         (-1.0, 1.0, -1.0),
-    //         (-1.0, -1.0, 1.0),
-    //         (-1.0, -1.0, -1.0),
-    //     ],
-    //     vec![
-    //         (0, 2, 4),
-    //         (2, 6, 4),
-    //         (1, 5, 3),
-    //         (3, 5, 7),
-    //         (0, 4, 1),
-    //         (1, 4, 5),
-    //         (2, 3, 6),
-    //         (3, 7, 6),
-    //         (0, 1, 2),
-    //         (1, 3, 2),
-    //         (4, 6, 5),
-    //         (5, 6, 7),
-    //     ],
-    // );
-    // let shape = (
-    //     shape
-    //         .0
-    //         .iter()
-    //         .map(|(x, y, z)| Vector3::new(*x, *y, *z))
-    //         .collect::<Vec<_>>(),
-    //     shape.1,
-    // );
-
     let shape = Mesh::load_from_file("sphere.obj")?;
-
     let start_time = Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
