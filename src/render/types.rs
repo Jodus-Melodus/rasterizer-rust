@@ -6,28 +6,31 @@ use std::{
 
 use rand::random_range;
 
-pub type M3x3 = [[f32; 3]; 3];
+#[derive(Clone, Copy)]
+pub struct M3x3([[f32; 3]; 3]);
 
-pub fn x_rotation_matrix(theta: f32) -> M3x3 {
-    [
-        [1.0, 0.0, 0.0],
-        [0.0, theta.cos(), -theta.sin()],
-        [0.0, theta.sin(), theta.cos()],
-    ]
-}
-pub fn y_rotation_matrix(theta: f32) -> M3x3 {
-    [
-        [theta.cos(), 0.0, theta.sin()],
-        [0.0, 1.0, 0.0],
-        [-theta.sin(), 0.0, theta.cos()],
-    ]
-}
-pub fn z_rotation_matrix(theta: f32) -> M3x3 {
-    [
-        [theta.cos(), -theta.sin(), 0.0],
-        [theta.sin(), theta.cos(), 0.0],
-        [0.0, 0.0, 1.0],
-    ]
+impl M3x3 {
+    pub fn x_rotation_matrix(theta: f32) -> Self {
+        M3x3([
+            [1.0, 0.0, 0.0],
+            [0.0, theta.cos(), -theta.sin()],
+            [0.0, theta.sin(), theta.cos()],
+        ])
+    }
+    pub fn y_rotation_matrix(theta: f32) -> Self {
+        M3x3([
+            [theta.cos(), 0.0, theta.sin()],
+            [0.0, 1.0, 0.0],
+            [-theta.sin(), 0.0, theta.cos()],
+        ])
+    }
+    pub fn z_rotation_matrix(theta: f32) -> Self {
+        M3x3([
+            [theta.cos(), -theta.sin(), 0.0],
+            [theta.sin(), theta.cos(), 0.0],
+            [0.0, 0.0, 1.0],
+        ])
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -83,55 +86,55 @@ impl FrameBufferSize {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Vector2 {
+pub struct Vertex2 {
     pub x: f32,
     pub y: f32,
 }
 
-impl Vector2 {
+impl Vertex2 {
     pub fn new(x: f32, y: f32) -> Self {
-        Vector2 { x, y }
+        Vertex2 { x, y }
     }
 }
 
-impl Add for Vector2 {
-    type Output = Vector2;
+impl Add for Vertex2 {
+    type Output = Vertex2;
     fn add(self, rhs: Self) -> Self::Output {
-        Vector2::new(self.x + rhs.x, self.y + rhs.y)
+        Vertex2::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
-impl Mul<f32> for Vector2 {
-    type Output = Vector2;
+impl Mul<f32> for Vertex2 {
+    type Output = Vertex2;
     fn mul(self, rhs: f32) -> Self::Output {
-        Vector2::new(self.x * rhs, self.y * rhs)
+        Vertex2::new(self.x * rhs, self.y * rhs)
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Vector3 {
+pub struct Vertex3 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 
-impl Vector3 {
+impl Vertex3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vector3 { x, y, z }
+        Vertex3 { x, y, z }
     }
 }
 
-impl Add for Vector3 {
-    type Output = Vector3;
+impl Add for Vertex3 {
+    type Output = Vertex3;
     fn add(self, rhs: Self) -> Self::Output {
-        Vector3::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+        Vertex3::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
     }
 }
 
-impl Mul<f32> for Vector3 {
-    type Output = Vector3;
+impl Mul<f32> for Vertex3 {
+    type Output = Vertex3;
     fn mul(self, rhs: f32) -> Self::Output {
-        Vector3::new(self.x * rhs, self.y * rhs, self.z * rhs)
+        Vertex3::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
 
@@ -144,7 +147,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: Vector3, fov: f32) -> Self {
+    pub fn new(position: Vertex3, fov: f32) -> Self {
         Camera {
             x: position.x,
             y: position.y,
@@ -154,29 +157,29 @@ impl Camera {
     }
 }
 
-impl Mul<Vector3> for M3x3 {
-    type Output = Vector3;
-    fn mul(self, rhs: Vector3) -> Self::Output {
-        let x = self[0][0] * rhs.x + self[0][1] * rhs.y + self[0][2] * rhs.z;
-        let y = self[1][0] * rhs.x + self[1][1] * rhs.y + self[1][2] * rhs.z;
-        let z = self[2][0] * rhs.x + self[2][1] * rhs.y + self[2][2] * rhs.z;
-        Vector3::new(x, y, z)
+impl Mul<Vertex3> for M3x3 {
+    type Output = Vertex3;
+    fn mul(self, rhs: Vertex3) -> Self::Output {
+        let x = self.0[0][0] * rhs.x + self.0[0][1] * rhs.y + self.0[0][2] * rhs.z;
+        let y = self.0[1][0] * rhs.x + self.0[1][1] * rhs.y + self.0[1][2] * rhs.z;
+        let z = self.0[2][0] * rhs.x + self.0[2][1] * rhs.y + self.0[2][2] * rhs.z;
+        Vertex3::new(x, y, z)
     }
 }
 
-impl Mul<M3x3> for Vector3 {
-    type Output = Vector3;
+impl Mul<M3x3> for Vertex3 {
+    type Output = Vertex3;
     fn mul(self, rhs: M3x3) -> Self::Output {
-        let x = rhs[0][0] * self.x + rhs[0][1] * self.y + rhs[0][2] * self.z;
-        let y = rhs[1][0] * self.x + rhs[1][1] * self.y + rhs[1][2] * self.z;
-        let z = rhs[2][0] * self.x + rhs[2][1] * self.y + rhs[2][2] * self.z;
-        Vector3::new(x, y, z)
+        let x = rhs.0[0][0] * self.x + rhs.0[0][1] * self.y + rhs.0[0][2] * self.z;
+        let y = rhs.0[1][0] * self.x + rhs.0[1][1] * self.y + rhs.0[1][2] * self.z;
+        let z = rhs.0[2][0] * self.x + rhs.0[2][1] * self.y + rhs.0[2][2] * self.z;
+        Vertex3::new(x, y, z)
     }
 }
 
 #[derive(Clone)]
 pub struct Mesh {
-    pub vertices: Vec<Vector3>,
+    pub vertices: Vec<Vertex3>,
     pub vertex_indices: Vec<(usize, usize, usize)>,
     pub texture_coordinate_indices: Vec<(usize, usize, usize)>,
     pub vertex_normal_indices: Vec<(usize, usize, usize)>,
@@ -184,7 +187,7 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new(
-        vertices: Vec<Vector3>,
+        vertices: Vec<Vertex3>,
         vertex_indices: Vec<(usize, usize, usize)>,
         texture_coordinate_indices: Vec<(usize, usize, usize)>,
         vertex_normal_indices: Vec<(usize, usize, usize)>,
@@ -213,7 +216,7 @@ impl Mesh {
                     "v" => {
                         let coords: Vec<f32> = parts.map(|p| p.parse().unwrap()).collect();
                         if coords.len() == 3 {
-                            vertices.push(Vector3::new(coords[0], coords[1], coords[2]));
+                            vertices.push(Vertex3::new(coords[0], coords[1], coords[2]));
                         } else {
                             eprintln!("Unknown vertex syntax: {}", line);
                         }

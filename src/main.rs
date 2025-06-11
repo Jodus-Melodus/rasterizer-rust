@@ -6,10 +6,7 @@ use std::{
 
 use crate::render::{
     rasterizer::Screen,
-    types::{
-        x_rotation_matrix, y_rotation_matrix, z_rotation_matrix, Camera, Color, FrameBufferSize,
-        Mesh, Vector3,
-    },
+    types::{Camera, Color, FrameBufferSize, Mesh, Vertex3},
 };
 
 mod render;
@@ -30,7 +27,7 @@ fn main() -> Result<()> {
     let mut screen = Screen::new(frame_buffer_size);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
     let mut frame_count = 0;
-    let mut camera = Camera::new(Vector3::new(0.0, 0.0, -2.0), 90.0_f32.to_radians());
+    let mut camera = Camera::new(Vertex3::new(0.0, 0.0, -2.0), 90.0_f32.to_radians());
     let shape = Mesh::load_from_file("sphere.obj")?;
     let start_time = Instant::now();
 
@@ -63,5 +60,3 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-// fix right side coords

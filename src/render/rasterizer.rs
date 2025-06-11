@@ -1,9 +1,6 @@
 use rayon::prelude::*;
 
-use crate::render::types::{
-    x_rotation_matrix, y_rotation_matrix, z_rotation_matrix, Camera, Color, FrameBufferSize, Mesh,
-    Vector2, Vector3,
-};
+use crate::render::types::{Camera, Color, FrameBufferSize, M3x3, Mesh, Vertex2, Vertex3};
 
 pub struct Screen {
     frame_buffer: Vec<u32>,
@@ -26,11 +23,11 @@ impl Screen {
         self.frame_buffer = vec![0; self.frame_buffer_size.width * self.frame_buffer_size.height];
     }
 
-    fn project(&self, point: Vector3, camera: Camera) -> (Vector2, f32) {
-        let rel = Vector3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
+    fn project(&self, point: Vertex3, camera: Camera) -> (Vertex2, f32) {
+        let rel = Vertex3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
 
         if rel.z <= 0.0 {
-            return (Vector2::new(0.0, 0.0), 0.0);
+            return (Vertex2::new(0.0, 0.0), 0.0);
         }
 
         let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
@@ -39,7 +36,7 @@ impl Screen {
         let y_ndc = (rel.y as f32 * f) / rel.z as f32;
 
         (
-            Vector2::new(
+            Vertex2::new(
                 x_ndc * (self.frame_buffer_size.width as f32 / 2.0),
                 y_ndc * (self.frame_buffer_size.height as f32 / 2.0),
             ),
@@ -47,7 +44,7 @@ impl Screen {
         )
     }
 
-    fn project_triangle(&self, triangle: [Vector3; 3], camera: Camera) -> [(Vector2, f32); 3] {
+    fn project_triangle(&self, triangle: [Vertex3; 3], camera: Camera) -> [(Vertex2, f32); 3] {
         [
             self.project(triangle[0], camera),
             self.project(triangle[1], camera),
@@ -55,10 +52,10 @@ impl Screen {
         ]
     }
 
-    fn draw_triangle(&mut self, triangle_points: [(Vector2, f32); 3], color: Color) {
+    fn draw_triangle(&mut self, triangle_points: [(Vertex2, f32); 3], color: Color) {
         let width = self.frame_buffer_size.width as isize;
         let height = self.frame_buffer_size.height as isize;
-        let offset = Vector2::new(
+        let offset = Vertex2::new(
             (self.frame_buffer_size.width / 2) as f32,
             (self.frame_buffer_size.height / 2) as f32,
         );
@@ -97,7 +94,7 @@ impl Screen {
             .flat_map_iter(|y| {
                 let mut writes = Vec::new();
                 for x in min_x..=max_x {
-                    let point = Vector2::new(x as f32, y as f32);
+                    let point = Vertex2::new(x as f32, y as f32);
                     let w0 = e0.0 * x as f32 + e0.1 * y as f32 + e0.2;
                     let w1 = e1.0 * x as f32 + e1.1 * y as f32 + e1.2;
                     let w2 = e2.0 * x as f32 + e2.1 * y as f32 + e2.2;
@@ -126,9 +123,9 @@ impl Screen {
     pub fn draw_shape(&mut self, shape: Mesh, theta: f32, camera: Camera) {
         let vertices = shape.vertices;
         let edges = shape.vertex_indices;
-        let x_rotation_matrix = x_rotation_matrix(theta);
-        let y_rotation_matrix = y_rotation_matrix(theta);
-        let z_rotation_matrix = z_rotation_matrix(theta);
+        let x_rotation_matrix = M3x3::x_rotation_matrix(theta);
+        let y_rotation_matrix = M3x3::y_rotation_matrix(theta);
+        let z_rotation_matrix = M3x3::z_rotation_matrix(theta);
 
         let rotated_points = vertices
             .iter()
