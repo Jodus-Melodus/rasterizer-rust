@@ -39,8 +39,8 @@ impl Screen {
 
         let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
         let f = 1.0 / (camera.fov / 2.0).tan();
-        let x_ndc = (rel.x as f32 * f / aspect) / rel.z as f32;
-        let y_ndc = (rel.y as f32 * f) / rel.z as f32;
+        let x_ndc = -(rel.x as f32 * f / aspect) / rel.z as f32;
+        let y_ndc = -(rel.y as f32 * f) / rel.z as f32;
 
         (
             Vertex2::new(
@@ -152,7 +152,7 @@ impl Screen {
 
         let rotated_points = vertices
             .iter()
-            .map(|v| *v * x_rotation_matrix * y_rotation_matrix * z_rotation_matrix)
+            .map(|v| *v * y_rotation_matrix)
             .collect::<Vec<_>>();
 
         let mut triangles = Vec::new();

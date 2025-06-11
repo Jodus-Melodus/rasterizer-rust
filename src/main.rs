@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
     let mut frame_count = 0;
     let mut camera = Camera::new(Vertex3::new(0.0, 0.0, -5.0), 90.0_f32.to_radians());
-    let shape = Model::load_from_file("objects/cube.obj", Some("objects/txture.png"))?;
+    let shape = Model::load_from_file("", Some(""))?;
     let start_time = Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
