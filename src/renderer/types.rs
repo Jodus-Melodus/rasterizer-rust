@@ -64,6 +64,10 @@ pub mod vertices {
         pub fn dot(self, rhs: Self) -> f32 {
             self.x * rhs.x + self.y * rhs.y
         }
+
+        pub fn perpendicular(&self) -> Self {
+            Vertex2::new(self.y, -self.x)
+        }
     }
 
     impl Add for Vertex2 {

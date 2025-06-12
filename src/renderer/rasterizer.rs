@@ -1,10 +1,7 @@
-use rayon::prelude::*;
-
 use crate::renderer::{
     model::{Model, TextureCoordinate, TextureMap},
     types::{
-        matrices::M3x3,
-        vertices::{barycentric, Vertex2, Vertex3},
+        vertices::{Vertex2, Vertex3},
         Camera, Color, FrameBufferSize,
     },
 };
@@ -12,6 +9,7 @@ use crate::renderer::{
 pub struct Screen {
     frame_buffer: Vec<u32>,
     frame_buffer_size: FrameBufferSize,
+    depth_buffer: Vec<f32>,
 }
 
 impl Screen {
@@ -19,6 +17,7 @@ impl Screen {
         Screen {
             frame_buffer: vec![0; frame_buffer_size.width * frame_buffer_size.height],
             frame_buffer_size,
+            depth_buffer: Vec::new(),
         }
     }
 
@@ -28,175 +27,126 @@ impl Screen {
 
     pub fn clear(&mut self) {
         self.frame_buffer = vec![0; self.frame_buffer_size.width * self.frame_buffer_size.height];
+        self.depth_buffer =
+            vec![f32::INFINITY; self.frame_buffer_size.width * self.frame_buffer_size.height];
     }
 
-    fn project(&self, point: Vertex3, camera: Camera) -> (Vertex2, f32) {
-        let rel = Vertex3::new(point.x - camera.x, point.y - camera.y, point.z - camera.z);
+    fn point_in_triangle(a: Vertex2, b: Vertex2, c: Vertex2, p: Vertex2) -> bool {
+        let ab = a - b;
+        let ab_perpendicular = ab.perpendicular();
+        let cp = c - p;
 
-        if rel.z <= 0.0 {
-            return (Vertex2::new(0.0, 0.0), 0.0);
-        }
+        ab_perpendicular.dot(cp) >= 0.0
+    }
 
-        let aspect = self.frame_buffer_size.width as f32 / self.frame_buffer_size.height as f32;
-        let f = 1.0 / (camera.fov / 2.0).tan();
-        let x_ndc = -(rel.x as f32 * f / aspect) / rel.z as f32;
-        let y_ndc = -(rel.y as f32 * f) / rel.z as f32;
+    fn project_point(&self, p: Vertex3, camera: Camera) -> (Vertex2, f32) {
+        let focal_length = self.frame_buffer_size.height as f32 / (2.0 * (camera.fov / 2.0).tan());
 
         (
-            Vertex2::new(
-                x_ndc * (self.frame_buffer_size.width as f32 / 2.0),
-                y_ndc * (self.frame_buffer_size.height as f32 / 2.0),
-            ),
-            point.z / rel.z,
+            Vertex2::new(p.x * focal_length / p.z, p.y * focal_length / p.z),
+            p.z,
         )
     }
 
     fn project_triangle(&self, triangle: [Vertex3; 3], camera: Camera) -> [(Vertex2, f32); 3] {
-        [
-            self.project(triangle[0], camera),
-            self.project(triangle[1], camera),
-            self.project(triangle[2], camera),
-        ]
+        triangle.map(|p| self.project_point(p, camera))
+    }
+
+    fn get_index(&mut self, p: Vertex2) -> Option<usize> {
+        let x = p.x.round() as isize;
+        let y = p.y.round() as isize;
+        let width = self.frame_buffer_size.width as isize;
+        let height = self.frame_buffer_size.height as isize;
+
+        if x >= 0 && x < width && y >= 0 && y < height {
+            Some((y * width + x) as usize)
+        } else {
+            None
+        }
+    }
+
+    fn draw_point(&mut self, p: Vertex2, color: Color) {
+        if let Some(index) = self.get_index(p) {
+            self.frame_buffer[index] = color.to_u32();
+        }
     }
 
     fn draw_triangle(
         &mut self,
-        triangle: ([(Vertex2, f32); 3], &[TextureCoordinate; 3]),
-        texture_map: &TextureMap,
+        triangle: [(Vertex2, f32); 3],
+        texture_coordinate: Option<[TextureCoordinate; 3]>,
+        texture_map: &Option<TextureMap>,
     ) {
-        let width = self.frame_buffer_size.width as isize;
-        let height = self.frame_buffer_size.height as isize;
-        let offset = Vertex2::new(
-            (self.frame_buffer_size.width / 2) as f32,
-            (self.frame_buffer_size.height / 2) as f32,
-        );
-        let triangle_points = triangle.0.iter().map(|(v, _)| v).collect::<Vec<_>>();
-        let texture_coords = triangle.1;
-        // create bounding box for triangle
-        let min_x = triangle_points
-            .iter()
-            .map(|v| v.x)
-            .fold(f32::MAX, f32::min)
-            .clamp(-offset.x, offset.x) as isize;
-        let max_x = triangle_points
-            .iter()
-            .map(|v| v.x)
-            .fold(f32::MIN, f32::max)
-            .clamp(-offset.x, offset.x) as isize;
-        let min_y = triangle_points
-            .iter()
-            .map(|v| v.y)
-            .fold(f32::MAX, f32::min)
-            .clamp(-offset.y, offset.y) as isize;
-        let max_y = triangle_points
-            .iter()
-            .map(|v| v.y)
-            .fold(f32::MIN, f32::max)
-            .clamp(-offset.y, offset.y) as isize;
+        let a = triangle[0];
+        let b = triangle[1];
+        let c = triangle[2];
 
-        let a = triangle_points[0].clone();
-        let b = triangle_points[1].clone();
-        let c = triangle_points[2].clone();
-        let e0 = (b.y - a.y, a.x - b.x, b.x * a.y - a.x * b.y);
-        let e1 = (c.y - b.y, b.x - c.x, c.x * b.y - b.x * c.y);
-        let e2 = (a.y - c.y, c.x - a.x, a.x * c.y - c.x * a.y);
+        let min_x = a.0.x.min(b.0.x).min(c.0.x) as isize;
+        let min_y = a.0.y.min(b.0.y).min(c.0.y) as isize;
+        let max_x = a.0.x.max(b.0.x).max(c.0.x) as isize;
+        let max_y = a.0.y.max(b.0.y).max(c.0.y) as isize;
 
-        let pixel_writes: Vec<(usize, u32)> = (min_y..=max_y)
-            .into_par_iter()
-            .flat_map_iter(|y| {
-                let mut writes = Vec::new();
-                for x in min_x..=max_x {
-                    let point = Vertex2::new(x as f32, y as f32);
-                    let w0 = e0.0 * x as f32 + e0.1 * y as f32 + e0.2;
-                    let w1 = e1.0 * x as f32 + e1.1 * y as f32 + e1.2;
-                    let w2 = e2.0 * x as f32 + e2.1 * y as f32 + e2.2;
+        for x in min_x..=max_x {
+            for y in min_y..=max_y {
+                let p = Vertex2::new(x as f32, y as f32);
 
-                    if (w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0)
-                        || (w0 <= 0.0 && w1 <= 0.0 && w2 <= 0.0)
-                    {
-                        let offset_point = point + offset;
-                        let ix = offset_point.x as isize;
-                        let iy = offset_point.y as isize;
-                        if ix >= 0 && iy >= 0 && ix < width && iy < height {
-                            let index = (width * iy + ix) as usize;
-                            let (u, v, w) = barycentric(a, b, c, point);
-                            let texture_coordinate = texture_coords[0] * u
-                                + texture_coords[1] * v
-                                + texture_coords[2] * w;
-                            let color = texture_map
-                                .get_pixel(texture_coordinate)
-                                .map_or(Color::random().to_u32(), |c| c.to_u32());
-                            writes.push((index, color));
+                if !Self::point_in_triangle(a.0, b.0, c.0, p) {
+                    continue;
+                }
+
+                if let (Some(texture_coord), Some(texture_map)) = (texture_coordinate, texture_map)
+                {
+                    // calculate texture coordinate for point
+
+                    if let Some(color) = texture_map.get_pixel(texture_coord) {
+                        if let Some(index) = self.get_index(p) {
+                            // calculate point depth
+                            if depth < self.depth_buffer[index] {
+                                self.draw_point(p, color);
+                                self.depth_buffer[index] = depth;
+                            }
                         }
                     }
                 }
-                writes
-            })
-            .collect();
-
-        for (index, color) in pixel_writes {
-            self.frame_buffer[index] = color;
+            }
         }
     }
 
-    pub fn draw_shape(&mut self, shape: Model, theta: f32, camera: Camera) {
-        let vertices = shape.mesh.vertices;
-        let vertex_indices = shape.mesh.vertex_indices; // edges
-        let texture_coordinates = shape.mesh.texture_coordinates;
-        let texture_coordinate_indices = shape.mesh.texture_coordinate_indices;
-        let vertex_normal_indices = shape.mesh.vertex_normal_indices;
-        let vertex_normals = shape.mesh.vertex_normals;
-        let x_rotation_matrix = M3x3::x_rotation_matrix(theta);
-        let y_rotation_matrix = M3x3::y_rotation_matrix(theta);
-        let z_rotation_matrix = M3x3::z_rotation_matrix(theta);
+    fn draw_model(&mut self, model: Model, camera: Camera) {
+        let texture_map = model.texture_map;
+        let vertices = model.mesh.vertices;
+        let vertex_indices = model.mesh.vertex_indices;
+        let texture_coordinates = model.mesh.texture_coordinates;
+        let texture_coordinate_indices = model.mesh.texture_coordinate_indices;
 
-        let rotated_points = vertices
+        let triangles = vertex_indices
             .iter()
-            .map(|v| *v * y_rotation_matrix)
+            .map(|(v1, v2, v3)| [vertices[*v1], vertices[*v2], vertices[*v3]])
             .collect::<Vec<_>>();
 
-        let mut triangles = Vec::new();
-
-        for i in 0..vertex_indices.len() {
-            let (v1, v2, v3) = vertex_indices[i];
-            let (vt1, vt2, vt3) = texture_coordinate_indices[i];
-            let (vn1, vn2, vn3) = vertex_normal_indices[i];
-
-            triangles.push((
-                [rotated_points[v1], rotated_points[v2], rotated_points[v3]],
-                [
-                    texture_coordinates[vt1],
-                    texture_coordinates[vt2],
-                    texture_coordinates[vt3],
-                ],
-            ));
-        }
-
-        // project triangles
-        let mut projected_triangles = triangles
+        let texture_coordinates = texture_coordinate_indices
             .iter()
-            .map(|(triangle, texture_coordinates)| {
-                (
-                    self.project_triangle(*triangle, camera),
-                    texture_coordinates,
-                )
+            .map(|(vt1, vt2, vt3)| {
+                [
+                    texture_coordinates[*vt1],
+                    texture_coordinates[*vt2],
+                    texture_coordinates[*vt3],
+                ]
             })
             .collect::<Vec<_>>();
 
-        // z buffering
-        projected_triangles.sort_by(|a, b| {
-            let avg_a = (a.0[0].1 + a.0[1].1 + a.0[2].1) / 3.0;
-            let avg_b = (b.0[0].1 + b.0[1].1 + b.0[2].1) / 3.0;
-            avg_a
-                .partial_cmp(&avg_b)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        let projected_triangles = triangles
+            .iter()
+            .map(|triangle| self.project_triangle(*triangle, camera))
+            .collect::<Vec<_>>();
 
-        // draw triangles
-        if let Some(ref texture_map) = shape.texture_map {
-            for triangle in projected_triangles.iter().rev() {
-                self.draw_triangle(*triangle, texture_map);
-            }
+        let triangles = projected_triangles
+            .iter()
+            .zip(texture_coordinates)
+            .collect::<Vec<_>>();
+
+        for (triangle, texture_coordinates) in triangles {
+            self.draw_triangle(*triangle, *texture_coordinates, &texture_map);
         }
     }
 }
