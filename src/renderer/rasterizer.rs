@@ -146,7 +146,7 @@ impl Screen {
             .collect::<Vec<_>>();
 
         for (triangle, texture_coordinates) in triangles {
-            self.draw_triangle(*triangle, *texture_coordinates, &texture_map);
+            self.draw_triangle(*triangle, Some(texture_coordinates), &texture_map);
         }
     }
 }
