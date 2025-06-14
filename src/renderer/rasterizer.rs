@@ -67,7 +67,7 @@ impl Screen {
                 self.frame_buffer_size.height as f32 / (2.0 * (camera.fov / 2.0).tan());
 
             let x_proj = px * focal_length / pz;
-            let y_proj = py * focal_length / pz;
+            let y_proj = -py * focal_length / pz;
 
             let projection = (Vertex2::new(x_proj, y_proj), pz);
             self.projection_cache.insert(key, projection);
@@ -116,7 +116,7 @@ impl Screen {
                     let depths = Vertex3::from((a.1, b.1, c.1));
                     let depth: f32 = depths.dot(depth_weights);
 
-                    if depth < self.depth_buffer[index] {
+                    if depth < self.depth_buffer[index] && depth > 0.0 {
                         if !Self::point_in_triangle(a.0, b.0, c.0, p) {
                             continue;
                         }
@@ -181,22 +181,37 @@ fn get_color(
     c: (Vertex2, f32),
     p: Vertex2,
 ) -> Color {
-    let color = if let (Some(texture_coord), Some(texture_map)) = (texture_coordinate, texture_map)
-    {
-        let texture_coordinate_weights = barycentric(a.0, b.0, c.0, p);
-        let interpolated_texcoord = TextureCoordinate::new(
-            texture_coord[0].u * texture_coordinate_weights.x
-                + texture_coord[1].u * texture_coordinate_weights.y
-                + texture_coord[2].u * texture_coordinate_weights.z,
-            texture_coord[0].v * texture_coordinate_weights.x
-                + texture_coord[1].v * texture_coordinate_weights.y
-                + texture_coord[2].v * texture_coordinate_weights.z,
-        );
-        texture_map
-            .get_pixel(interpolated_texcoord)
-            .unwrap_or(Color::MAX)
+    if let (Some(tex_coords), Some(tex_map)) = (texture_coordinate, texture_map) {
+        let weights = barycentric(a.0, b.0, c.0, p);
+        if weights.x < 0.0 || weights.y < 0.0 || weights.z < 0.0 {
+            return Color::MAX;
+        }
+
+        let z0 = a.1;
+        let z1 = b.1;
+        let z2 = c.1;
+
+        let one_over_z0 = 1.0 / z0;
+        let one_over_z1 = 1.0 / z1;
+        let one_over_z2 = 1.0 / z2;
+
+        let u_over_z = tex_coords[0].u * one_over_z0 * weights.x
+            + tex_coords[1].u * one_over_z1 * weights.y
+            + tex_coords[2].u * one_over_z2 * weights.z;
+
+        let v_over_z = tex_coords[0].v * one_over_z0 * weights.x
+            + tex_coords[1].v * one_over_z1 * weights.y
+            + tex_coords[2].v * one_over_z2 * weights.z;
+
+        let one_over_z =
+            one_over_z0 * weights.x + one_over_z1 * weights.y + one_over_z2 * weights.z;
+
+        let u = u_over_z / one_over_z;
+        let v = v_over_z / one_over_z;
+
+        let interpolated = TextureCoordinate::new(u, v);
+        tex_map.get_pixel(interpolated).unwrap_or(Color::MAX)
     } else {
         Color::MAX
-    };
-    color
+    }
 }

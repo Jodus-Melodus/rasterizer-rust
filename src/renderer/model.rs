@@ -63,7 +63,7 @@ impl TextureMap {
         }
 
         let x = (u * (self.width as f32 - 1.0)).round() as usize;
-        let y = ((1.0 - v) * (self.height as f32 - 1.0)).round() as usize;
+        let y = (v * (self.height as f32 - 1.0)).round() as usize;
 
         let color = if x < self.width && y < self.height {
             let index = (y * self.width + x) * 4;
