@@ -18,18 +18,6 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(mesh: Mesh, texture_path: Option<&str>) -> Self {
-        if let Some(texture_path) = texture_path {
-            let texture_map = TextureMap::load_from_file(texture_path).ok();
-            Model { mesh, texture_map }
-        } else {
-            Model {
-                mesh,
-                texture_map: None,
-            }
-        }
-    }
-
     pub fn load_from_file(object_path: &str, texture_path: Option<&str>) -> Result<Self> {
         let mesh = Mesh::load_from_file(object_path)?;
         let texture_map = if let Some(texture_path) = texture_path {
@@ -49,16 +37,7 @@ pub struct TextureMap {
 }
 
 impl TextureMap {
-    pub fn new(width: usize, height: usize, data: Vec<u8>) -> Self {
-        TextureMap {
-            width,
-            height,
-            data,
-        }
-    }
-
     pub fn load_from_file(path: &str) -> Result<Self> {
-        // Read image data
         let img = ImageReader::open(path)?
             .decode()
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
@@ -72,15 +51,14 @@ impl TextureMap {
     }
 
     pub fn get_pixel(&self, texture_coordinate: TextureCoordinate) -> Option<Color> {
-        // Clamp UVs to [0, 1]
         let u = texture_coordinate.x.clamp(0.0, 1.0);
         let v = texture_coordinate.y.clamp(0.0, 1.0);
-        // Convert to pixel coordinates
+
         let x = (u * (self.width as f32 - 1.0)).round() as usize;
-        // Flip v for image coordinate system
         let y = ((1.0 - v) * (self.height as f32 - 1.0)).round() as usize;
-        let index = (y * self.width + x) * 4;
-        if index + 3 < self.data.len() {
+
+        if x < self.width && y < self.height {
+            let index = (y * self.width + x) * 4;
             Some(Color::new(
                 self.data[index],
                 self.data[index + 1],
