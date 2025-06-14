@@ -28,8 +28,8 @@ fn main() -> Result<()> {
     let mut screen = Screen::new(frame_buffer_size);
     let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
     let mut frame_count = 0;
-    let mut camera = Camera::new(Vertex3::new(0.0, 0.0, -5.0), 90.0_f32.to_radians());
-    let shape = Model::load_from_file("", Some(""))?;
+    let mut camera = Camera::new(Vertex3::new(0.0, 0.0, -10.0), 90.0_f32.to_radians());
+    let mut shape = Model::load_from_file("objects/cube.obj", Some("objects/texture.png"))?;
     let start_time = Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
@@ -44,9 +44,10 @@ fn main() -> Result<()> {
             }
         }
 
-        let theta = start_time.elapsed().as_secs_f32() * 1.0;
         screen.clear();
-        screen.draw_shape(shape.clone(), theta, camera);
+        let theta = 0.01;
+        screen.rotate_model(&mut shape, (0, 1, 0), theta);
+        screen.draw_model(shape.clone(), camera);
 
         window
             .update_with_buffer(&screen.frame_buffer(), width, height)

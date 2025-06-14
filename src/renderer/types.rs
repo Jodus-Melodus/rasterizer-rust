@@ -98,6 +98,16 @@ pub mod vertices {
         pub fn new(x: f32, y: f32, z: f32) -> Self {
             Vertex3 { x, y, z }
         }
+
+        pub fn dot(&self, other: Self) -> f32 {
+            self.x * other.x + self.y * other.y + self.z * other.z
+        }
+    }
+
+    impl From<(f32, f32, f32)> for Vertex3 {
+        fn from(value: (f32, f32, f32)) -> Self {
+            Vertex3::new(value.0, value.1, value.2)
+        }
     }
 
     impl Add for Vertex3 {
@@ -126,7 +136,7 @@ pub mod vertices {
 
     // Calculate barycentric coordinates of point p with respect to triangle (a, b, c)
     // Returns (alpha, beta, gamma)
-    pub fn barycentric(a: Vertex2, b: Vertex2, c: Vertex2, p: Vertex2) -> (f32, f32, f32) {
+    pub fn barycentric(a: Vertex2, b: Vertex2, c: Vertex2, p: Vertex2) -> Vertex3 {
         let v0 = b - a;
         let v1 = c - a;
         let v2 = p - a;
@@ -141,7 +151,7 @@ pub mod vertices {
         let v = (d11 * d20 - d01 * d21) / denom;
         let w = (d00 * d21 - d01 * d20) / denom;
         let u = 1.0 - v - w;
-        (u, v, w)
+        Vertex3::new(u, v, w)
     }
 }
 
@@ -154,12 +164,7 @@ pub struct Color {
 }
 
 impl Color {
-    pub const BLACK: Color = Color::new(0, 0, 0, 0);
-    pub const RED: Color = Color::new(255, 0, 0, 0);
-    pub const GREEN: Color = Color::new(0, 255, 0, 0);
-    pub const BLUE: Color = Color::new(0, 0, 255, 0);
-
-    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Color { r, g, b, a }
     }
 
