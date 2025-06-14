@@ -4,14 +4,8 @@ use std::{
     io::{BufRead, BufReader, Error, ErrorKind, Result},
 };
 
-use crate::renderer::types::{
-    vertices::{Vertex2, Vertex3},
-    Color,
-};
+use crate::renderer::types::{vertices::Vertex3, Color, TextureCoordinate};
 
-pub type TextureCoordinate = Vertex2;
-
-#[derive(Clone)]
 pub struct Model {
     pub mesh: Mesh,
     pub texture_map: Option<TextureMap>,
@@ -29,11 +23,12 @@ impl Model {
     }
 }
 
-#[derive(Clone)]
 pub struct TextureMap {
     pub width: usize,
     pub height: usize,
     pub data: Vec<u8>,
+    texture_coordinate_cache: Vec<Option<Color>>,
+    cache_resolution: usize,
 }
 
 impl TextureMap {
@@ -43,35 +38,49 @@ impl TextureMap {
             .map_err(|e| Error::new(ErrorKind::Other, e))?;
         let (width, height) = img.dimensions();
         let data = img.to_rgba8().into_raw();
+        let cache_resolution = 100;
+        let cache_size = cache_resolution * cache_resolution;
         Ok(TextureMap {
             width: width as usize,
             height: height as usize,
             data,
+            texture_coordinate_cache: vec![None; cache_size],
+            cache_resolution,
         })
     }
 
-    pub fn get_pixel(&self, texture_coordinate: TextureCoordinate) -> Option<Color> {
-        let u = texture_coordinate.x.clamp(0.0, 1.0);
-        let v = texture_coordinate.y.clamp(0.0, 1.0);
+    #[inline(always)]
+    pub fn get_pixel(&mut self, texture_coordinate: TextureCoordinate) -> Option<Color> {
+        let u = texture_coordinate.u.clamp(0.0, 1.0);
+        let v = texture_coordinate.v.clamp(0.0, 1.0);
+
+        let quant_u = (u * (self.cache_resolution as f32 - 1.0)).round() as usize;
+        let quant_v = (v * (self.cache_resolution as f32 - 1.0)).round() as usize;
+        let cache_index = quant_v * self.cache_resolution + quant_u;
+
+        if let Some(color) = self.texture_coordinate_cache[cache_index] {
+            return Some(color);
+        }
 
         let x = (u * (self.width as f32 - 1.0)).round() as usize;
         let y = ((1.0 - v) * (self.height as f32 - 1.0)).round() as usize;
 
-        if x < self.width && y < self.height {
+        let color = if x < self.width && y < self.height {
             let index = (y * self.width + x) * 4;
-            Some(Color::new(
-                self.data[index],
-                self.data[index + 1],
-                self.data[index + 2],
-                self.data[index + 3],
-            ))
+            let r = self.data[index] as u32;
+            let g = self.data[index + 1] as u32;
+            let b = self.data[index + 2] as u32;
+            let a = self.data[index + 3] as u32;
+            Some((a << 24) | (r << 16) | (g << 8) | b)
         } else {
             None
-        }
+        };
+
+        self.texture_coordinate_cache[cache_index] = color;
+        color
     }
 }
 
-#[derive(Clone)]
 pub struct Mesh {
     pub vertices: Vec<Vertex3>,
     pub texture_coordinates: Vec<TextureCoordinate>,

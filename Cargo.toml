@@ -8,3 +8,6 @@ image = "0.25.6"
 minifb = "0.28.0"
 rand = "0.9.1"
 rayon = "1.10.0"
+
+[profile.release]
+debug = true

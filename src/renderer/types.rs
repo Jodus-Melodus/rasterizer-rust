@@ -1,6 +1,6 @@
-use rand::random_range;
-
 use crate::renderer::types::vertices::Vertex3;
+
+const SCALE: f32 = 1000.0;
 
 pub mod matrices {
     use std::ops::Mul;
@@ -48,9 +48,9 @@ pub mod matrices {
 pub mod vertices {
     use std::ops::{Add, Mul, Sub};
 
-    use crate::renderer::types::matrices::M3x3;
+    use crate::renderer::types::{matrices::M3x3, SCALE};
 
-    #[derive(Clone, Copy, Debug)]
+    #[derive(Clone, Copy)]
     pub struct Vertex2 {
         pub x: f32,
         pub y: f32,
@@ -87,11 +87,18 @@ pub mod vertices {
         }
     }
 
-    #[derive(Clone, Copy, Debug)]
+    #[derive(Clone, Copy)]
     pub struct Vertex3 {
         pub x: f32,
         pub y: f32,
         pub z: f32,
+    }
+
+    #[derive(Eq, PartialEq, Hash)]
+    pub struct Vertex3Key {
+        pub x: i32,
+        pub y: i32,
+        pub z: i32,
     }
 
     impl Vertex3 {
@@ -134,18 +141,26 @@ pub mod vertices {
         }
     }
 
-    // Calculate barycentric coordinates of point p with respect to triangle (a, b, c)
-    // Returns (alpha, beta, gamma)
+    impl From<Vertex3> for Vertex3Key {
+        fn from(v: Vertex3) -> Self {
+            Vertex3Key {
+                x: (v.x * SCALE) as i32,
+                y: (v.y * SCALE) as i32,
+                z: (v.z * SCALE) as i32,
+            }
+        }
+    }
+
     pub fn barycentric(a: Vertex2, b: Vertex2, c: Vertex2, p: Vertex2) -> Vertex3 {
         let v0 = b - a;
         let v1 = c - a;
         let v2 = p - a;
 
-        let d00 = v0.dot(v0);
-        let d01 = v0.dot(v1);
-        let d11 = v1.dot(v1);
-        let d20 = v2.dot(v0);
-        let d21 = v2.dot(v1);
+        let d00 = &v0.dot(v0);
+        let d01 = &v0.dot(v1);
+        let d11 = &v1.dot(v1);
+        let d20 = &v2.dot(v0);
+        let d21 = &v2.dot(v1);
 
         let denom = d00 * d11 - d01 * d01;
         let v = (d11 * d20 - d01 * d21) / denom;
@@ -155,45 +170,8 @@ pub mod vertices {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-}
+pub type Color = u32;
 
-impl Color {
-    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Color { r, g, b, a }
-    }
-
-    pub fn to_u32(&self) -> u32 {
-        ((self.r as u32) << 16) | ((self.g as u32) << 8) | self.b as u32
-    }
-
-    pub fn random() -> Self {
-        Color {
-            r: random_range(0..=255),
-            g: random_range(0..=255),
-            b: random_range(0..=255),
-            a: 255,
-        }
-    }
-}
-
-impl From<(u8, u8, u8, u8)> for Color {
-    fn from(value: (u8, u8, u8, u8)) -> Self {
-        Color {
-            r: value.0,
-            g: value.1,
-            b: value.2,
-            a: value.3,
-        }
-    }
-}
-
-#[derive(Clone)]
 pub struct FrameBufferSize {
     pub width: usize,
     pub height: usize,
@@ -213,6 +191,14 @@ pub struct Camera {
     pub fov: f32,
 }
 
+#[derive(Eq, PartialEq, Hash)]
+pub struct CameraKey {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+    pub fov: i32,
+}
+
 impl Camera {
     pub fn new(position: Vertex3, fov: f32) -> Self {
         Camera {
@@ -221,5 +207,28 @@ impl Camera {
             z: position.z,
             fov,
         }
+    }
+}
+
+impl From<Camera> for CameraKey {
+    fn from(c: Camera) -> Self {
+        CameraKey {
+            x: (c.x * SCALE) as i32,
+            y: (c.y * SCALE) as i32,
+            z: (c.z * SCALE) as i32,
+            fov: (c.fov * SCALE) as i32,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct TextureCoordinate {
+    pub u: f32,
+    pub v: f32,
+}
+
+impl TextureCoordinate {
+    pub fn new(u: f32, v: f32) -> Self {
+        TextureCoordinate { u, v }
     }
 }

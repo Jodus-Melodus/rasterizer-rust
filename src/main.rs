@@ -1,8 +1,5 @@
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use std::{
-    io::{stdin, stdout, Result, Write},
-    time::Instant,
-};
+use std::{io::Result, time::Instant};
 
 use crate::renderer::{
     model::Model,
@@ -12,17 +9,7 @@ use crate::renderer::{
 
 mod renderer;
 
-fn read_line(prompt: &str) -> String {
-    let mut input = String::new();
-    print!("{}", prompt);
-    stdout().flush().unwrap();
-    stdin().read_line(&mut input).expect("Failed to read line");
-    input.trim().to_string()
-}
-
 fn main() -> Result<()> {
-    // let width = read_line("Width: ").parse::<usize>().unwrap_or(1024);
-    // let height = read_line("Height: ").parse::<usize>().unwrap_or(512);
     let (width, height) = (1024, 512);
     let frame_buffer_size = FrameBufferSize::new(width, height);
     let mut screen = Screen::new(frame_buffer_size);
@@ -47,10 +34,10 @@ fn main() -> Result<()> {
         screen.clear();
         let theta = 0.01;
         screen.rotate_model(&mut shape, (0, 1, 0), theta);
-        screen.draw_model(shape.clone(), camera);
+        screen.draw_model(&mut shape, camera);
 
         window
-            .update_with_buffer(&screen.frame_buffer(), width, height)
+            .update_with_buffer(screen.frame_buffer(), width, height)
             .unwrap();
 
         frame_count += 1;
