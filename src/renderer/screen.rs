@@ -1,5 +1,3 @@
-use std::usize;
-
 use crate::renderer::types::Color;
 
 pub struct ScreenBuffer<const W: usize, const H: usize> {
@@ -20,5 +18,9 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     pub fn set(&mut self, x: usize, y: usize, color: Color) {
         // center around (0; 0) and add 1 because arrays are 0 index based
         self.buffer[y + self.y_offset + 1][x + self.x_offset + 1] = color;
+    }
+
+    pub fn get_screen_resolution(&self) -> (usize, usize) {
+        (W, H)
     }
 }
