@@ -1,3 +1,10 @@
+use crate::renderer::{
+    screen::{ScreenBuffer, HEIGHT, WIDTH},
+    types::Color,
+};
+
+pub mod renderer;
+
 fn main() {
-    println!("Hello world")
+    let screen: ScreenBuffer = [[Color::default(); WIDTH]; HEIGHT];
 }
