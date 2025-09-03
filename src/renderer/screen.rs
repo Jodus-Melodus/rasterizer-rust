@@ -3,9 +3,7 @@ use crate::renderer::types::Color;
 const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
 fn get_ascii_gradient_value(color: Color) -> char {
-    let (r, g, b) = color;
-    let gray = 0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32;
-    let normalized = gray / 255.0;
+    let normalized = color.to_gray() as f32;
     let index = (normalized * (GRADIENT.len() - 1) as f32).round() as usize;
     GRADIENT[index]
 }
@@ -19,7 +17,7 @@ pub struct ScreenBuffer<const W: usize, const H: usize> {
 impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     pub fn new() -> Self {
         ScreenBuffer {
-            buffer: vec![vec![Color::default(); W]; H],
+            buffer: vec![vec![Color::BLACK; W]; H],
             x_offset: (W / 2) as isize,
             y_offset: (H / 2) as isize,
         }
