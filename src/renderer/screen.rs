@@ -26,7 +26,6 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 
     pub fn set(&mut self, x: isize, y: isize, color: Color) {
-        // center around (0; 0) and add 1 because arrays are 0 index based
         self.buffer[(y + self.y_offset) as usize][(x + self.x_offset) as usize] = color;
     }
 
