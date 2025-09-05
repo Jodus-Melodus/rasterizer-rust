@@ -1,53 +1,9 @@
-use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use std::{io::Result, time::Instant};
+use crate::renderer::screen::ScreenBuffer;
 
-use crate::renderer::{
-    model::Model,
-    rasterizer::Screen,
-    types::{vertices::Vertex3, Camera, FrameBufferSize},
-};
+pub mod renderer;
 
-mod renderer;
+fn main() {
+    let screen = ScreenBuffer::<1280, 720>::new();
 
-fn main() -> Result<()> {
-    let (width, height) = (1024, 512);
-    let frame_buffer_size = FrameBufferSize::new(width, height);
-    let mut screen = Screen::new(frame_buffer_size);
-    let mut window = Window::new("Rasterizer", width, height, WindowOptions::default()).unwrap();
-    let mut frame_count = 0;
-    let mut camera = Camera::new(Vertex3::new(0.0, 0.0, -10.0), 90.0_f32.to_radians());
-    let mut shape = Model::load_from_file("objects/monkey.obj", Some("objects/texture.png"))?;
-    let start_time = Instant::now();
-
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        let pressed_keys = window.get_keys_pressed(KeyRepeat::Yes);
-        if !pressed_keys.is_empty() {
-            for key in pressed_keys {
-                match key {
-                    Key::W => camera.z -= 1.0,
-                    Key::S => camera.z += 1.0,
-                    Key::A => camera.x -= 1.0,
-                    Key::D => camera.x += 1.0,
-                    Key::LeftShift => camera.y -= 1.0,
-                    Key::Space => camera.y += 1.0,
-                    _ => (),
-                }
-            }
-        }
-
-        screen.clear();
-        screen.draw_model(&mut shape, camera);
-
-        window
-            .update_with_buffer(screen.frame_buffer(), width, height)
-            .unwrap();
-
-        frame_count += 1;
-    }
-
-    let duration = start_time.elapsed();
-    let fps = frame_count as f32 / duration.as_secs_f32();
-    println!("Fps: {}", fps);
-
-    Ok(())
+    println!("{}", screen.ascii());
 }
