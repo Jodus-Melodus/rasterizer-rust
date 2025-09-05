@@ -1,9 +1,9 @@
-use crate::renderer::screen::ScreenBuffer;
+use crate::renderer::model::Model;
 
 pub mod renderer;
 
 fn main() {
-    let screen = ScreenBuffer::<1280, 720>::new();
+    let model = Model::from_file("object/cube.obj").unwrap();
 
-    println!("{}", screen.ascii());
+    println!("{:?}\n{:?}", model.vertices, model.faces);
 }
