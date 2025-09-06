@@ -3,15 +3,15 @@ use std::{
     io::{Error, Read},
 };
 
-use minmath::linear_algebra::vector::Vector;
+use crate::renderer::vector::Vector3;
 
 pub struct Model {
-    pub vertices: Vec<Vector<3>>,
+    pub vertices: Vec<Vector3>,
     pub faces: Vec<(usize, usize, usize)>,
 }
 
 impl Model {
-    pub fn new(vertices: Vec<Vector<3>>, faces: Vec<(usize, usize, usize)>) -> Self {
+    pub fn new(vertices: Vec<Vector3>, faces: Vec<(usize, usize, usize)>) -> Self {
         Model { vertices, faces }
     }
 
@@ -35,11 +35,11 @@ impl Model {
 
             match tokens[0] {
                 "v" => {
-                    vertices.push(Vector::<3>::new([
+                    vertices.push(Vector3::new(
                         tokens[1].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                         tokens[2].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                         tokens[3].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
-                    ]));
+                    ));
                 }
                 "f" => {
                     let mut face_indices = Vec::new();

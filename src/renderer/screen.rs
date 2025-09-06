@@ -1,6 +1,7 @@
-use minmath::linear_algebra::vector::Vector;
-
-use crate::renderer::types::Color;
+use crate::renderer::{
+    types::Color,
+    vector::{Vector2, Vector3},
+};
 
 const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
@@ -48,15 +49,15 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         result
     }
 
-    pub fn draw_triangle(&mut self, a: Vector<2>, b: Vector<2>, c: Vector<2>, color: Color) {
-        let max_x = a[0].max(b[0].max(c[0])).ceil() as isize;
-        let min_x = a[0].min(b[0].min(c[0])).floor() as isize;
-        let max_y = a[1].max(b[1].max(c[1])).ceil() as isize;
-        let min_y = a[1].min(b[1].min(c[1])).floor() as isize;
+    pub fn draw_triangle(&mut self, a: Vector2, b: Vector2, c: Vector2, color: Color) {
+        let max_x = a.x.max(b.x.max(c.x)).ceil() as isize;
+        let min_x = a.x.min(b.x.min(c.x)).floor() as isize;
+        let max_y = a.y.max(b.y.max(c.y)).ceil() as isize;
+        let min_y = a.y.min(b.y.min(c.y)).floor() as isize;
 
         for y in min_y..max_y {
             for x in min_x..max_x {
-                let p = Vector::new([x as f32, y as f32]);
+                let p = Vector2::new(x as f32, y as f32);
 
                 if calculate_barycentric_coordinates(p, a, b, c) {
                     self.set(x, y, color);
@@ -66,18 +67,20 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 }
 
-fn calculate_barycentric_coordinates(
-    p: Vector<2>,
-    a: Vector<2>,
-    b: Vector<2>,
-    c: Vector<2>,
-) -> bool {
-    let denominator = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
-
-    let u = ((b[1] - c[1]) * (p[0] - c[0]) + (c[0] - b[0]) * (p[1] - c[1])) / denominator;
-
-    let v = ((c[1] - a[1]) * (p[0] - c[0]) + (a[0] - c[0]) * (p[1] - c[1])) / denominator;
-
+fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> bool {
+    let denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
+    let u = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator;
+    let v = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / denominator;
     let w = 1.0 - u - v;
     return (u >= 0.0) && (v >= 0.0) && (w >= 0.0);
+}
+
+pub fn project_coordinate(p: Vector3, focal_length: f32) -> Vector2 {
+    let denominator = focal_length + p.z;
+    if denominator == 0.0 {
+        panic!("Division by 0");
+    }
+    let projected_x = (focal_length * p.x) / denominator;
+    let projected_y = (focal_length * p.y) / denominator;
+    Vector2::new(projected_x, projected_y)
 }
