@@ -22,6 +22,11 @@ impl Color {
         let gray = ((0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) / 255.0) as u8;
         gray
     }
+
+    pub fn to_u32(&self) -> u32 {
+        let a = 0xFF;
+        ((a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
+    }
 }
 
 impl Into<(u8, u8, u8)> for Color {
