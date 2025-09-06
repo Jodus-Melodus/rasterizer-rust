@@ -1,4 +1,7 @@
-use crate::renderer::{types::Color, vector::Vector2};
+use crate::renderer::{
+    types::Color,
+    vector::{Vector2, Vector3},
+};
 
 const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
@@ -66,11 +69,18 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
 
 fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> bool {
     let denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
-
     let u = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator;
-
     let v = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / denominator;
-
     let w = 1.0 - u - v;
     return (u >= 0.0) && (v >= 0.0) && (w >= 0.0);
+}
+
+pub fn project_coordinate(p: Vector3, focal_length: f32) -> Vector2 {
+    let denominator = focal_length + p.z;
+    if denominator == 0.0 {
+        panic!("Devision by 0");
+    }
+    let projected_x = (focal_length * p.x) / denominator;
+    let projected_y = (focal_length * p.y) / denominator;
+    Vector2::new(projected_x, projected_y)
 }
