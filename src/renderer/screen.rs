@@ -78,7 +78,7 @@ fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vect
 pub fn project_coordinate(p: Vector3, focal_length: f32) -> Vector2 {
     let denominator = focal_length + p.z;
     if denominator == 0.0 {
-        panic!("Devision by 0");
+        panic!("Division by 0");
     }
     let projected_x = (focal_length * p.x) / denominator;
     let projected_y = (focal_length * p.y) / denominator;
