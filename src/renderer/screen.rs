@@ -26,6 +26,10 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.buffer = vec![vec![Color::BLACK; W]; H];
+    }
+
     pub fn pixels(&self) -> Vec<u32> {
         self.buffer
             .iter()
@@ -34,7 +38,14 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 
     pub fn set(&mut self, x: isize, y: isize, color: Color) {
-        self.buffer[(y + self.y_offset) as usize][(x + self.x_offset) as usize] = color;
+        let index_x = (x + self.x_offset) as usize;
+        let index_y = (y + self.y_offset) as usize;
+
+        if index_y >= H || index_x >= W {
+            return;
+        }
+
+        self.buffer[index_y][index_x] = color;
     }
 
     pub fn get(&self, x: isize, y: isize) -> Color {
@@ -83,9 +94,9 @@ fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vect
 }
 
 pub fn project_coordinate(p: Vector3, focal_length: f32) -> Vector2 {
-    let denominator = focal_length + p.z;
+    let mut denominator = focal_length + p.z;
     if denominator == 0.0 {
-        panic!("Division by 0");
+        denominator = 0.00001;
     }
     let projected_x = (focal_length * p.x) / denominator;
     let projected_y = (focal_length * p.y) / denominator;
