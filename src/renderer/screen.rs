@@ -49,7 +49,14 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 
     pub fn get(&self, x: isize, y: isize) -> Color {
-        self.buffer[(y + self.y_offset) as usize][(x + self.x_offset) as usize]
+        let index_x = (x + self.x_offset) as usize;
+        let index_y = (y + self.y_offset) as usize;
+
+        if index_y >= H || index_x >= W {
+            return Color::new(0, 0, 0);
+        }
+
+        self.buffer[index_y][index_x]
     }
 
     pub fn get_screen_resolution(&self) -> (usize, usize) {
