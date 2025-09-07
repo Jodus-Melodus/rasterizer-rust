@@ -1,43 +1,32 @@
-use minifb::{Key, KeyRepeat, Window, WindowOptions};
+use crossterm::event::{read, Event, KeyCode, KeyEvent};
 
-use crate::renderer::{
-    screen::{project_coordinate, ScreenBuffer},
-    types::Color,
-    vector::{Vector2, Vector3},
-};
+use crate::renderer::{screen::ScreenBuffer, types::Color, vector::Vector2};
 
 pub mod renderer;
 
-const WIDTH: usize = 1280;
-const HEIGHT: usize = 720;
+const WIDTH: usize = 208;
+const HEIGHT: usize = 50;
 
 fn main() {
-    let mut window =
-        Window::new("rasterizer-rust", WIDTH, HEIGHT, WindowOptions::default()).unwrap();
     let mut screen: ScreenBuffer<WIDTH, HEIGHT> = ScreenBuffer::new();
-    let mut z = 0.0;
-    let mut focal_length = -10.0;
+    let mut running = true;
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        for k in window.get_keys() {
-            match k {
-                Key::W => z += 1.0,
-                Key::S => z -= 1.0,
-                _ => (),
-            }
+    while running {
+        match read().unwrap() {
+            Event::Key(KeyEvent { code, .. }) => match code {
+                KeyCode::Esc => {
+                    running = false;
+                }
+                _ => {}
+            },
+            _ => {}
         }
 
-        println!("{}", z);
-
-        let a = project_coordinate(Vector3::new(-10.0, -10.0, z), focal_length);
-        let b = project_coordinate(Vector3::new(10.0, -10.0, z), focal_length);
-        let c = project_coordinate(Vector3::new(0.0, 10.0, z), focal_length);
+        let a = Vector2::new(-10.0, -10.0);
+        let b = Vector2::new(10.0, -10.0);
+        let c = Vector2::new(0.0, 10.0);
         screen.draw_triangle(a, b, c, Color::WHITE);
-
-        window
-            .update_with_buffer(&screen.pixels(), WIDTH, HEIGHT)
-            .unwrap();
-
+        println!("{}", screen.ascii());
         screen.clear();
     }
 }
