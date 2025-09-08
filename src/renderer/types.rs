@@ -1,3 +1,5 @@
+const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
+
 #[derive(Clone, Copy)]
 pub struct Color {
     r: u8,
@@ -17,20 +19,25 @@ impl Color {
         Color { r, g, b }
     }
 
-    pub fn to_gray(&self) -> u8 {
+    pub fn as_char(&self) -> char {
         let (r, g, b) = (self.r, self.g, self.b);
-        let gray = ((0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) / 255.0) as u8;
-        gray
+        let gray = ((0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) / 255.0) as f32;
+        let index = (gray * (GRADIENT.len() - 1) as f32).round() as usize;
+        GRADIENT[index]
     }
 
     pub fn to_u32(&self) -> u32 {
         let a = 0xFF;
         ((a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
     }
-}
 
-impl Into<(u8, u8, u8)> for Color {
-    fn into(self) -> (u8, u8, u8) {
-        (self.r, self.g, self.b)
+    pub fn display(&self) -> String {
+        format!(
+            "\x1b[38;2;{};{};{}m{}\x1b[0m",
+            self.r,
+            self.g,
+            self.b,
+            self.as_char()
+        )
     }
 }

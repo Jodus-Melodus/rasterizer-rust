@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{thread::sleep, time::Duration};
 
 use crossterm::event::{self, Event, KeyCode};
 
@@ -11,7 +11,7 @@ const HEIGHT: usize = 50;
 
 fn main() {
     let mut screen: ScreenBuffer<WIDTH, HEIGHT> = ScreenBuffer::new();
-    let model = Model::load_from_file("objects/complex.obj").unwrap();
+    let model = Model::load_from_file("objects/torus.obj").unwrap();
     let mut focal_length = 50.0;
     let mut running = true;
 
@@ -30,8 +30,10 @@ fn main() {
             }
         }
 
-        screen.draw_model(&model, focal_length);
-        println!("{}", screen.display());
         screen.clear();
+        screen.draw_model(&model, focal_length);
+        print!("\x1b[2J\x1b[H");
+        println!("{}", screen.display());
+        sleep(Duration::from_millis(100));
     }
 }

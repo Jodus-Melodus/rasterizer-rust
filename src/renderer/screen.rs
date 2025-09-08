@@ -1,16 +1,10 @@
+use rand::Rng;
+
 use crate::renderer::{
     model::Model,
     types::Color,
     vector::{Vector2, Vector3},
 };
-
-const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
-
-fn get_ascii_gradient_value(color: &Color) -> char {
-    let normalized = color.to_gray() as f32;
-    let index = (normalized * (GRADIENT.len() - 1) as f32).round() as usize;
-    GRADIENT[index]
-}
 
 pub struct ScreenBuffer<const W: usize, const H: usize> {
     buffer: Vec<Vec<Color>>,
@@ -68,7 +62,7 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         let mut result = String::new();
         for y in -self.y_offset..self.y_offset {
             for x in -self.x_offset..self.x_offset {
-                result.push(get_ascii_gradient_value(self.get(x, y)));
+                result.push_str(&self.get(x, y).display());
             }
             result.push('\n');
         }
@@ -93,14 +87,20 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 
     pub fn draw_model(&mut self, model: &Model, focal_length: f32) {
+        let mut rng = rand::rng();
         for (face_index1, face_index2, face_index3) in model.faces.iter() {
             let (vertex1, vertex2, vertex3) = (
                 project_coordinate(&model.vertices[*face_index1], focal_length),
                 project_coordinate(&model.vertices[*face_index2], focal_length),
                 project_coordinate(&model.vertices[*face_index3], focal_length),
             );
+            let color = Color::new(
+                rng.random_range(0..=255),
+                rng.random_range(0..=255),
+                rng.random_range(0..=255),
+            );
 
-            self.draw_triangle(&vertex1, &vertex2, &vertex3, &Color::WHITE);
+            self.draw_triangle(&vertex1, &vertex2, &vertex3, &color);
         }
     }
 }
