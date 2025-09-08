@@ -15,7 +15,7 @@ impl Model {
         Model { vertices, faces }
     }
 
-    pub fn from_file(path: &str) -> Result<Self, Error> {
+    pub fn load_from_file(path: &str) -> Result<Self, Error> {
         let mut file = File::open(path)?;
         let mut vertices = Vec::new();
         let mut faces = Vec::new();
