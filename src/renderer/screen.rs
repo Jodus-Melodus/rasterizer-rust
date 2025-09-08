@@ -1,15 +1,10 @@
+use rand::Rng;
+
 use crate::renderer::{
+    model::Model,
     types::Color,
     vector::{Vector2, Vector3},
 };
-
-const GRADIENT: [char; 10] = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
-
-fn get_ascii_gradient_value(color: Color) -> char {
-    let normalized = color.to_gray() as f32;
-    let index = (normalized * (GRADIENT.len() - 1) as f32).round() as usize;
-    GRADIENT[index]
-}
 
 pub struct ScreenBuffer<const W: usize, const H: usize> {
     buffer: Vec<Vec<Color>>,
@@ -30,14 +25,7 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         self.buffer = vec![vec![Color::BLACK; W]; H];
     }
 
-    pub fn pixels(&self) -> Vec<u32> {
-        self.buffer
-            .iter()
-            .flat_map(|row| row.iter().map(|c| c.to_u32()))
-            .collect()
-    }
-
-    pub fn set(&mut self, x: isize, y: isize, color: Color) {
+    fn set(&mut self, x: isize, y: isize, color: Color) {
         let index_x = (x + self.x_offset) as usize;
         let index_y = (y + self.y_offset) as usize;
 
@@ -48,33 +36,33 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         self.buffer[index_y][index_x] = color;
     }
 
-    pub fn get(&self, x: isize, y: isize) -> Color {
+    fn get(&self, x: isize, y: isize) -> &Color {
         let index_x = (x + self.x_offset) as usize;
         let index_y = (y + self.y_offset) as usize;
 
         if index_y >= H || index_x >= W {
-            return Color::new(0, 0, 0);
+            panic!("Index out of bounds");
         }
 
-        self.buffer[index_y][index_x]
+        &self.buffer[index_y][index_x]
     }
 
-    pub fn get_screen_resolution(&self) -> (usize, usize) {
+    pub fn screen_resolution(&self) -> (usize, usize) {
         (W, H)
     }
 
-    pub fn ascii(&self) -> String {
+    pub fn display(&self) -> String {
         let mut result = String::new();
         for y in -self.y_offset..self.y_offset {
             for x in -self.x_offset..self.x_offset {
-                result.push(get_ascii_gradient_value(self.get(x, y)));
+                result.push_str(&self.get(x, y).display());
             }
             result.push('\n');
         }
         result
     }
 
-    pub fn draw_triangle(&mut self, a: Vector2, b: Vector2, c: Vector2, color: Color) {
+    fn draw_triangle(&mut self, a: &Vector2, b: &Vector2, c: &Vector2, color: &Color) {
         let max_x = a.x.max(b.x.max(c.x)).ceil() as isize;
         let min_x = a.x.min(b.x.min(c.x)).floor() as isize;
         let max_y = a.y.max(b.y.max(c.y)).ceil() as isize;
@@ -84,15 +72,33 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
             for x in min_x..max_x {
                 let p = Vector2::new(x as f32, y as f32);
 
-                if calculate_barycentric_coordinates(p, a, b, c) {
-                    self.set(x, y, color);
+                if calculate_barycentric_coordinates(&p, &a, &b, &c) {
+                    self.set(x, y, *color);
                 }
             }
         }
     }
+
+    pub fn draw_model(&mut self, model: &Model, focal_length: f32) {
+        let mut rng = rand::rng();
+        for (face_index1, face_index2, face_index3) in model.faces.iter() {
+            let (vertex1, vertex2, vertex3) = (
+                project_coordinate(&model.vertices[*face_index1], focal_length),
+                project_coordinate(&model.vertices[*face_index2], focal_length),
+                project_coordinate(&model.vertices[*face_index3], focal_length),
+            );
+            let color = Color::new(
+                rng.random_range(0..=255),
+                rng.random_range(0..=255),
+                rng.random_range(0..=255),
+            );
+
+            self.draw_triangle(&vertex1, &vertex2, &vertex3, &color);
+        }
+    }
 }
 
-fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> bool {
+fn calculate_barycentric_coordinates(p: &Vector2, a: &Vector2, b: &Vector2, c: &Vector2) -> bool {
     let denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
     let u = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator;
     let v = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / denominator;
@@ -100,7 +106,7 @@ fn calculate_barycentric_coordinates(p: Vector2, a: Vector2, b: Vector2, c: Vect
     return (u >= 0.0) && (v >= 0.0) && (w >= 0.0);
 }
 
-pub fn project_coordinate(p: Vector3, focal_length: f32) -> Vector2 {
+fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector2 {
     let mut denominator = focal_length + p.z;
     if denominator == 0.0 {
         denominator = 0.00001;
