@@ -25,13 +25,6 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         self.buffer = vec![vec![Color::BLACK; W]; H];
     }
 
-    pub fn pixels(&self) -> Vec<u32> {
-        self.buffer
-            .iter()
-            .flat_map(|row| row.iter().map(|c| c.to_u32()))
-            .collect()
-    }
-
     fn set(&mut self, x: isize, y: isize, color: Color) {
         let index_x = (x + self.x_offset) as usize;
         let index_y = (y + self.y_offset) as usize;

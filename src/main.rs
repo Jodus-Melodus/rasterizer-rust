@@ -1,8 +1,6 @@
-use std::{thread::sleep, time::Duration};
-
-use crossterm::event::{self, Event, KeyCode};
-
 use crate::renderer::{model::Model, screen::ScreenBuffer};
+use crossterm::event::{self, Event, KeyCode};
+use std::{thread::sleep, time::Duration};
 
 pub mod renderer;
 

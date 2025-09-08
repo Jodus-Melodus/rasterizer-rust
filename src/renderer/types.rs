@@ -26,11 +26,6 @@ impl Color {
         GRADIENT[index]
     }
 
-    pub fn to_u32(&self) -> u32 {
-        let a = 0xFF;
-        ((a as u32) << 24) | ((self.r as u32) << 16) | ((self.g as u32) << 8) | (self.b as u32)
-    }
-
     pub fn display(&self) -> String {
         format!(
             "\x1b[38;2;{};{};{}m{}\x1b[0m",
