@@ -82,10 +82,14 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     pub fn draw_model(&mut self, model: &Model, focal_length: f32) {
         let mut rng = rand::rng();
         for (face_index1, face_index2, face_index3) in model.faces.iter() {
-            let (vertex1, vertex2, vertex3) = (
-                project_coordinate(&model.vertices[*face_index1], focal_length),
-                project_coordinate(&model.vertices[*face_index2], focal_length),
-                project_coordinate(&model.vertices[*face_index3], focal_length),
+            let vertex1 = model.vertices[*face_index1];
+            let vertex2 = model.vertices[*face_index2];
+            let vertex3 = model.vertices[*face_index3];
+
+            let (projected_vertex1, projected_vertex2, projected_vertex3) = (
+                project_coordinate(&vertex1, focal_length),
+                project_coordinate(&vertex2, focal_length),
+                project_coordinate(&vertex3, focal_length),
             );
             let color = Color::new(
                 rng.random_range(0..=255),
@@ -93,7 +97,12 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
                 rng.random_range(0..=255),
             );
 
-            self.draw_triangle(&vertex1, &vertex2, &vertex3, &color);
+            self.draw_triangle(
+                &projected_vertex1,
+                &projected_vertex2,
+                &projected_vertex3,
+                &color,
+            );
         }
     }
 }
