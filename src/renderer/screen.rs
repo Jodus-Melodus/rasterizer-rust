@@ -165,7 +165,7 @@ fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector3 {
     }
     Vector3::new(
         (focal_length * p.x) / denominator,
-        (focal_length * p.y) / denominator,
+        -(focal_length * p.y) / denominator,
         p.z,
     )
 }
