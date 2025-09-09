@@ -9,7 +9,7 @@ const HEIGHT: usize = 50;
 
 fn main() {
     let mut screen: ScreenBuffer<WIDTH, HEIGHT> = ScreenBuffer::new();
-    let model = Model::load_from_file("objects/axis.obj").unwrap();
+    let model = Model::load_from_file("objects/torus.obj").unwrap();
     let mut focal_length = 50.0;
     let mut running = true;
 
