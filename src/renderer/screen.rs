@@ -165,7 +165,7 @@ fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector3 {
     }
     Vector3::new(
         (focal_length * p.x) / denominator,
-        (focal_length * p.y) / denominator,
+        -(focal_length * p.y) / denominator,
         p.z,
     )
 }
@@ -174,30 +174,28 @@ fn normalize_depth(z: f32, near: f32, far: f32) -> f32 {
     (z - near) / (far - near)
 }
 
-pub fn rotate_model(model: &mut Model, rotation: &[Axis], theta: f32) {
+pub fn rotate_model(model: &mut Model, rotation_axis: Axis, theta: f32) {
     let (sin_theta, cos_theta) = (theta.sin(), theta.cos());
 
     for vertex in &mut model.vertices {
-        for axis in rotation {
-            match axis {
-                Axis::X => {
-                    let y = vertex.y * cos_theta - vertex.z * sin_theta;
-                    let z = vertex.y * sin_theta + vertex.z * cos_theta;
-                    vertex.y = y;
-                    vertex.z = z;
-                }
-                Axis::Y => {
-                    let x = vertex.x * cos_theta + vertex.z * sin_theta;
-                    let z = -vertex.x * sin_theta + vertex.z * cos_theta;
-                    vertex.x = x;
-                    vertex.z = z;
-                }
-                Axis::Z => {
-                    let x = vertex.x * cos_theta - vertex.y * sin_theta;
-                    let y = vertex.x * sin_theta + vertex.y * cos_theta;
-                    vertex.x = x;
-                    vertex.y = y;
-                }
+        match rotation_axis {
+            Axis::X => {
+                let y = vertex.y * cos_theta - vertex.z * sin_theta;
+                let z = vertex.y * sin_theta + vertex.z * cos_theta;
+                vertex.y = y;
+                vertex.z = z;
+            }
+            Axis::Y => {
+                let x = vertex.x * cos_theta + vertex.z * sin_theta;
+                let z = -vertex.x * sin_theta + vertex.z * cos_theta;
+                vertex.x = x;
+                vertex.z = z;
+            }
+            Axis::Z => {
+                let x = vertex.x * cos_theta - vertex.y * sin_theta;
+                let y = vertex.x * sin_theta + vertex.y * cos_theta;
+                vertex.x = x;
+                vertex.y = y;
             }
         }
     }
