@@ -24,10 +24,9 @@ fn main() {
 
     while running {
         let now = Instant::now();
-        let dt = now.duration_since(last_frame).as_secs_f32();
+        let delta_time = now.duration_since(last_frame).as_secs_f32();
         last_frame = now;
 
-        // Handle input
         if event::poll(Duration::from_millis(1)).unwrap() {
             if let Event::Key(key_event) = event::read().unwrap() {
                 match key_event.code {
@@ -42,7 +41,7 @@ fn main() {
             }
         }
 
-        rotate_model(&mut model, &[Axis::X, Axis::Y], rotation_speed * dt);
+        rotate_model(&mut model, Axis::X, rotation_speed * delta_time);
 
         screen.clear();
         screen.draw_model(&model, focal_length);
