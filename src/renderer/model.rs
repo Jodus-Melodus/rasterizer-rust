@@ -5,13 +5,13 @@ use std::{
 
 use image::{GenericImageView, Pixel};
 
-use crate::renderer::types::{Color, Vector2, Vector3};
+use crate::renderer::types::{Color, Point2D, Point3D};
 
 pub struct Model {
-    pub vertices: Vec<Vector3>,
+    pub vertices: Vec<Point3D>,
     pub faces: Vec<((usize, usize, usize), (usize, usize, usize))>,
     pub texture: Vec<Vec<Color>>,
-    pub texture_coordinates: Vec<Vector2>,
+    pub texture_coordinates: Vec<Point2D>,
 }
 
 impl Model {
@@ -37,14 +37,14 @@ impl Model {
 
             match tokens[0] {
                 "v" => {
-                    vertices.push(Vector3::new(
+                    vertices.push(Point3D::new(
                         tokens[1].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                         tokens[2].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                         tokens[3].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                     ));
                 }
                 "vt" => {
-                    texture_coordinates.push(Vector2::new(
+                    texture_coordinates.push(Point2D::new(
                         tokens[1].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                         tokens[2].parse::<f32>().unwrap_or_else(|e| panic!("{}", e)),
                     ));

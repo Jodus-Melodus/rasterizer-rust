@@ -52,26 +52,26 @@ pub enum Axis {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Vector2 {
+pub struct Point2D {
     pub x: f32,
     pub y: f32,
 }
 
-impl Vector2 {
+impl Point2D {
     pub fn new(x: f32, y: f32) -> Self {
-        Vector2 { x, y }
+        Point2D { x, y }
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Vector3 {
+pub struct Point3D {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 
-impl Vector3 {
+impl Point3D {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vector3 { x, y, z }
+        Point3D { x, y, z }
     }
 }

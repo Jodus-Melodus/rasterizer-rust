@@ -1,6 +1,6 @@
 use crate::renderer::{
     model::Model,
-    types::{Axis, Color, Vector2, Vector3},
+    types::{Axis, Color, Point2D, Point3D},
 };
 
 pub struct ScreenBuffer<const W: usize, const H: usize> {
@@ -87,10 +87,10 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
 
     fn draw_triangle(
         &mut self,
-        a: &Vector3,
-        b: &Vector3,
-        c: &Vector3,
-        texture_coordinates: (Vector2, Vector2, Vector2),
+        a: &Point3D,
+        b: &Point3D,
+        c: &Point3D,
+        texture_coordinates: (Point2D, Point2D, Point2D),
         texture: &Vec<Vec<Color>>,
     ) {
         let max_x = a.x.max(b.x.max(c.x)).ceil() as isize;
@@ -100,13 +100,13 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         let near = 0.1;
         let far = 100.0;
 
-        let a2 = Vector2::new(a.x, a.y);
-        let b2 = Vector2::new(b.x, b.y);
-        let c2 = Vector2::new(c.x, c.y);
+        let a2 = Point2D::new(a.x, a.y);
+        let b2 = Point2D::new(b.x, b.y);
+        let c2 = Point2D::new(c.x, c.y);
 
         for y in min_y..max_y {
             for x in min_x..max_x {
-                let p = Vector2::new(x as f32, y as f32);
+                let p = Point2D::new(x as f32, y as f32);
                 let (u, v, w) = calculate_barycentric_coordinates(&p, &a2, &b2, &c2);
 
                 if (u >= 0.0) && (v >= 0.0) && (w >= 0.0) {
@@ -165,10 +165,10 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
 }
 
 fn calculate_barycentric_coordinates(
-    p: &Vector2,
-    a: &Vector2,
-    b: &Vector2,
-    c: &Vector2,
+    p: &Point2D,
+    a: &Point2D,
+    b: &Point2D,
+    c: &Point2D,
 ) -> (f32, f32, f32) {
     let denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
     let u = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator;
@@ -177,12 +177,12 @@ fn calculate_barycentric_coordinates(
     (u, v, w)
 }
 
-fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector3 {
+fn project_coordinate(p: &Point3D, focal_length: f32) -> Point3D {
     let mut denominator = focal_length + p.z;
     if denominator == 0.0 {
         denominator = 0.00001;
     }
-    Vector3::new(
+    Point3D::new(
         (focal_length * p.x) / denominator,
         -(focal_length * p.y) / denominator,
         p.z,
@@ -190,9 +190,9 @@ fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector3 {
 }
 
 fn interpolate_texture_coords(
-    texture_coord1: Vector2,
-    texture_coord2: Vector2,
-    texture_coord3: Vector2,
+    texture_coord1: Point2D,
+    texture_coord2: Point2D,
+    texture_coord3: Point2D,
     u: f32,
     v: f32,
     w: f32,
