@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::renderer::{
     model::Model,
     types::{Axis, Color, Vector2, Vector3},
@@ -87,7 +85,14 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
         result
     }
 
-    fn draw_triangle(&mut self, a: &Vector3, b: &Vector3, c: &Vector3, color: &Color) {
+    fn draw_triangle(
+        &mut self,
+        a: &Vector3,
+        b: &Vector3,
+        c: &Vector3,
+        texture_coordinates: (Vector2, Vector2, Vector2),
+        texture: &Vec<Vec<Color>>,
+    ) {
         let max_x = a.x.max(b.x.max(c.x)).ceil() as isize;
         let min_x = a.x.min(b.x.min(c.x)).floor() as isize;
         let max_y = a.y.max(b.y.max(c.y)).ceil() as isize;
@@ -106,9 +111,21 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
 
                 if (u >= 0.0) && (v >= 0.0) && (w >= 0.0) {
                     let depth = normalize_depth(u * a.z + v * b.z + w * c.z, near, far);
+                    let texture_coordinate = interpolate_texture_coords(
+                        texture_coordinates.0,
+                        texture_coordinates.1,
+                        texture_coordinates.2,
+                        u,
+                        v,
+                        w,
+                        texture[0].len(),
+                        texture.len(),
+                    );
+
+                    let color = texture[texture_coordinate.1][texture_coordinate.0];
 
                     if depth < self.get_depth_buffer_index(x, y) {
-                        self.set(x, y, *color);
+                        self.set(x, y, color);
                         self.set_depth_buffer(x, y, depth);
                     }
                 }
@@ -117,8 +134,11 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
     }
 
     pub fn draw_model(&mut self, model: &Model, focal_length: f32) {
-        let mut rng = rand::rng();
-        for (face_index1, face_index2, face_index3) in model.faces.iter() {
+        for (
+            (face_index1, face_index2, face_index3),
+            (texture_index1, texture_index2, texture_index3),
+        ) in model.faces.iter()
+        {
             let vertex1 = model.vertices[*face_index1];
             let vertex2 = model.vertices[*face_index2];
             let vertex3 = model.vertices[*face_index3];
@@ -128,17 +148,17 @@ impl<const W: usize, const H: usize> ScreenBuffer<W, H> {
                 project_coordinate(&vertex2, focal_length),
                 project_coordinate(&vertex3, focal_length),
             );
-            let color = Color::new(
-                rng.random_range(0..=255),
-                rng.random_range(0..=255),
-                rng.random_range(0..=255),
-            );
 
             self.draw_triangle(
                 &projected_vertex1,
                 &projected_vertex2,
                 &projected_vertex3,
-                &color,
+                (
+                    model.texture_coordinates[*texture_index1],
+                    model.texture_coordinates[*texture_index2],
+                    model.texture_coordinates[*texture_index3],
+                ),
+                &model.texture,
             );
         }
     }
@@ -167,6 +187,29 @@ fn project_coordinate(p: &Vector3, focal_length: f32) -> Vector3 {
         -(focal_length * p.y) / denominator,
         p.z,
     )
+}
+
+fn interpolate_texture_coords(
+    texture_coord1: Vector2,
+    texture_coord2: Vector2,
+    texture_coord3: Vector2,
+    u: f32,
+    v: f32,
+    w: f32,
+    tex_width: usize,
+    tex_height: usize,
+) -> (usize, usize) {
+    let tx = u * texture_coord1.x + v * texture_coord2.x + w * texture_coord3.x;
+    let ty = u * texture_coord1.y + v * texture_coord2.y + w * texture_coord3.y;
+
+    let px = (tx * (tex_width as f32 - 1.0))
+        .round()
+        .clamp(0.0, tex_width as f32 - 1.0);
+    let py = (ty * (tex_height as f32 - 1.0))
+        .round()
+        .clamp(0.0, tex_height as f32 - 1.0);
+
+    (px as usize, py as usize)
 }
 
 fn normalize_depth(z: f32, near: f32, far: f32) -> f32 {

@@ -5,22 +5,29 @@ pub struct Color {
     r: u8,
     g: u8,
     b: u8,
+    a: u8,
 }
 
 impl Color {
-    pub const BLACK: Color = Color { r: 0, g: 0, b: 0 };
+    pub const BLACK: Color = Color {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255,
+    };
     pub const WHITE: Color = Color {
         r: 255,
         g: 255,
         b: 255,
+        a: 255,
     };
 
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Color { r, g, b }
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Color { r, g, b, a }
     }
 
     pub fn as_char(&self) -> char {
-        let (r, g, b) = (self.r, self.g, self.b);
+        let (r, g, b, _a) = (self.r, self.g, self.b, self.a);
         let gray = ((0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) / 255.0) as f32;
         let index = (gray * (GRADIENT.len() - 1) as f32).round() as usize;
         GRADIENT[index]
