@@ -3,7 +3,7 @@ use std::{
     io::{Error, Read},
 };
 
-use crate::renderer::vector::Vector3;
+use crate::renderer::types::Vector3;
 
 pub struct Model {
     pub vertices: Vec<Vector3>,

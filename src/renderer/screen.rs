@@ -2,8 +2,7 @@ use rand::Rng;
 
 use crate::renderer::{
     model::Model,
-    types::{Axis, Color},
-    vector::{Vector2, Vector3},
+    types::{Axis, Color, Vector2, Vector3},
 };
 
 pub struct ScreenBuffer<const W: usize, const H: usize> {
