@@ -45,7 +45,7 @@ fn main() {
 
         screen.clear();
         screen.draw_model(&model, focal_length);
-        print!("\x1b[2J\x1b[H");
+        print!("\x1b[H");
         println!("{}", screen.display());
 
         sleep(Duration::from_millis(16));
